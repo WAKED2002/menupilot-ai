@@ -49,9 +49,9 @@ function obBody(st) {
     <button class="${src === 'file' ? 'on' : ''}" onclick="STATE.ob.src='file';render()">PDF / image</button></div>
    ${src === 'paste' ? `<div class="field"><label>Menu text — any length</label><textarea id="obPaste" rows="10" placeholder="GRILLED FISH&#10;Grilled Hamour  89&#10;Grilled Seabass  95&#10;&#10;SHRIMP&#10;Jumbo Shrimp Sayadiya  79"></textarea></div>
     <button class="btn btn-navy" onclick="runPasteExtraction()">▶ Extract every item</button>` : ''}
-   ${src === 'url' ? `<div class="field"><label>Restaurant website URL</label><input id="obSrcVal" value="${esc(org.website || '')}" placeholder="https://restaurant.sa/menu"></div>
-    <div class="alert warn"><span>◆</span><div><b>Coming soon:</b> URL extraction runs server-side (Claude reads your live menu). For now, use <b>Paste menu text</b> — paste from your website for the same accuracy.</div></div>
-    <button class="btn btn-line btn-sm" onclick="STATE.ob.src='paste';render()">Use paste mode instead</button>` : ''}
+   ${src === 'url' ? `<div class="field"><label>Restaurant website or menu page URL</label><input id="obSrcVal" value="${esc(org.website || '')}" placeholder="https://restaurant.sa/menu" onkeydown="if(event.key==='Enter')runUrlExtraction()"></div>
+    <div class="alert info"><span>◆</span><div>Claude reads your live menu page server-side and extracts every item. Works best on pages that display text prices (not image-only menus).</div></div>
+    <button class="btn btn-navy" onclick="runUrlExtraction()">▶ Extract from URL</button>` : ''}
    ${src === 'file' ? `<div class="field"><label>Menu file (PDF or image)</label><input type="file" accept=".pdf,image/*" id="menuFile" onchange="handleFileUpload(this)"></div>
     <div class="alert info"><span>◆</span><div>Claude will read the uploaded file and extract your menu items automatically.</div></div>
     <button class="btn btn-navy" id="btnFileExtract" disabled onclick="runFileExtraction()">▶ Extract from file</button>` : ''}
@@ -178,6 +178,36 @@ async function runPasteExtraction() {
   STATE.ob.extracted = true;
   toast(parsed.length + ' items extracted');
   setTimeout(() => { STATE.ob.step = 4; render(); }, 1400);
+}
+
+async function runUrlExtraction() {
+  const url = ($('obSrcVal') && $('obSrcVal').value.trim()) || STATE.org.website || '';
+  const t = $('obTerm');
+  if (!url.startsWith('http')) { toast('Enter a valid URL starting with https://', 'bad'); return; }
+  t.innerHTML = `› Fetching <b>${esc(url)}</b> server-side…`;
+  try {
+    const res = await fetch('/api/fetch-menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Unknown error');
+    if (!data.items || !data.items.length) {
+      t.innerHTML = `<span style="color:#FF9B8E">✗ No priced menu items found on that page.</span><br><span class="g">Tip:</span> link directly to the menu page, or switch to Paste mode.`;
+      toast('No items found — try the menu page URL directly', 'bad');
+      return;
+    }
+    t.innerHTML = `<span class="g">✓</span> ${data.items.length} items found · running Recipe Intelligence Agent…`;
+    await importParsed(data.items.map(it => ({ n: it.name, price: it.price, cat: it.category || 'General', desc: it.description || '' })));
+    t.innerHTML += `<br><span class="g">✓</span> Done — review items on the next step`;
+    STATE.ob.extracted = true;
+    toast(data.items.length + ' items extracted from URL');
+    setTimeout(() => { STATE.ob.step = 4; render(); }, 1400);
+  } catch (err) {
+    t.innerHTML = `<span style="color:#FF9B8E">✗ ${esc(err.message)}</span><br><span class="g">Tip:</span> Some sites block bots. Try Paste mode instead — copy your menu page (Ctrl+A, Ctrl+C) and paste it.`;
+    toast('URL extraction failed: ' + err.message, 'bad');
+  }
 }
 
 async function handleFileUpload(input) {
