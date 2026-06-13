@@ -6,10 +6,21 @@
 
 const { createClient } = window.supabase;
 
-const SUPABASE_URL  = window.SUPABASE_URL;   // injected from index.html
+const SUPABASE_URL  = window.SUPABASE_URL;
 const SUPABASE_ANON = window.SUPABASE_ANON;
 
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+// Guard: don't crash if env vars weren't injected at build time
+const _sbConfigured = SUPABASE_URL && !SUPABASE_URL.startsWith('__') && SUPABASE_URL.startsWith('https://');
+let sb = null;
+try {
+  if (!_sbConfigured) throw new Error('SUPABASE_URL not configured');
+  sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+} catch (e) {
+  console.error('[MenuPilot] Supabase init failed:', e.message, '— set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel environment variables.');
+}
+
+// Stub returned when sb is null — lets public pages render, shows error on auth
+function _noDb() { return { data: null, error: { message: 'Database not configured — add SUPABASE_URL and SUPABASE_ANON_KEY in your Vercel project settings, then redeploy.' } }; }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
@@ -17,34 +28,37 @@ const DB = {
 
   // ── Auth ──────────────────────────────────────────────────────
   async signUp(email, password, meta = {}) {
-    const { data, error } = await sb.auth.signUp({
-      email, password,
-      options: { data: meta }
-    });
+    if (!sb) return _noDb();
+    const { data, error } = await sb.auth.signUp({ email, password, options: { data: meta } });
     return { data, error };
   },
 
   async signIn(email, password) {
+    if (!sb) return _noDb();
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
     return { data, error };
   },
 
   async signOut() {
+    if (!sb) return { error: null };
     const { error } = await sb.auth.signOut();
     return { error };
   },
 
   async getUser() {
+    if (!sb) return { user: null, error: null };
     const { data: { user }, error } = await sb.auth.getUser();
     return { user, error };
   },
 
   async getSession() {
+    if (!sb) return { session: null, error: null };
     const { data: { session }, error } = await sb.auth.getSession();
     return { session, error };
   },
 
   onAuthChange(callback) {
+    if (!sb) return;
     return sb.auth.onAuthStateChange(callback);
   },
 

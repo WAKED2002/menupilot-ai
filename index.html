@@ -36,30 +36,31 @@
 <script>
 // Boot — check Supabase session on load
 (async () => {
-  const { session } = await DB.getSession();
-  if (session) {
-    // Restore session
-    const { user } = await DB.getUser();
-    const { data: orgs } = await DB.getUserOrgs();
-    if (orgs && orgs.length) {
-      const orgState = await DB.loadOrgState(orgs[0].id);
-      const th = STATE.theme, lg = STATE.lang;
-      STATE = { ...blankState(), ...orgState, authed: true, verified: true, theme: th, lang: lg };
-      STATE.user = { n: user.user_metadata?.name || user.email, email: user.email, role: 'Owner' };
-      STATE.route = 'dash';
+  try {
+    const { session } = await DB.getSession();
+    if (session) {
+      const { user } = await DB.getUser();
+      const { data: orgs } = await DB.getUserOrgs();
+      if (orgs && orgs.length) {
+        const orgState = await DB.loadOrgState(orgs[0].id);
+        const th = STATE.theme, lg = STATE.lang;
+        STATE = { ...blankState(), ...orgState, authed: true, verified: true, theme: th, lang: lg };
+        STATE.user = { n: user.user_metadata?.name || user.email, email: user.email, role: 'Owner' };
+        STATE.route = 'dash';
+      }
     }
+    DB.onAuthChange(async (event, _session) => {
+      if (event === 'SIGNED_OUT') {
+        const th = STATE.theme, lg = STATE.lang;
+        STATE = blankState(); STATE.theme = th; STATE.lang = lg;
+        go('landing');
+      }
+    });
+  } catch (err) {
+    console.error('[MenuPilot] Boot error:', err);
+  } finally {
+    render();
   }
-
-  // Listen for auth changes (token refresh, sign-out)
-  DB.onAuthChange(async (event, session) => {
-    if (event === 'SIGNED_OUT') {
-      const th = STATE.theme, lg = STATE.lang;
-      STATE = blankState(); STATE.theme = th; STATE.lang = lg;
-      go('landing');
-    }
-  });
-
-  render();
 })();
 </script>
 </body>
