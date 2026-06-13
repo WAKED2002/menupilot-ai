@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MenuPilot AI — Restaurant Costing, Pricing & Profitability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/styles.css">
+
+<!-- Supabase JS — CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Inject Supabase credentials (replaced at build/deploy time via Vercel env) -->
+<script>
+  window.SUPABASE_URL  = '__SUPABASE_URL__';
+  window.SUPABASE_ANON = '__SUPABASE_ANON_KEY__';
+</script>
+</head>
+<body>
+<div id="root"></div>
+<div class="toast-wrap" id="toasts"></div>
+<div id="modalhost"></div>
+
+<!-- Load modules in dependency order -->
+<script src="/js/core.js"></script>
+<script src="/js/state.js"></script>
+<script src="/js/db.js"></script>
+<script src="/js/cost-engine.js"></script>
+<script src="/js/agents.js"></script>
+<script src="/js/pages-public.js"></script>
+<script src="/js/pages-onboard.js"></script>
+<script src="/js/pages-app.js"></script>
+<script src="/js/router.js"></script>
+
+<script>
+// Boot — check Supabase session on load
+(async () => {
+  const { session } = await DB.getSession();
+  if (session) {
+    // Restore session
+    const { user } = await DB.getUser();
+    const { data: orgs } = await DB.getUserOrgs();
+    if (orgs && orgs.length) {
+      const orgState = await DB.loadOrgState(orgs[0].id);
+      const th = STATE.theme, lg = STATE.lang;
+      STATE = { ...blankState(), ...orgState, authed: true, verified: true, theme: th, lang: lg };
+      STATE.user = { n: user.user_metadata?.name || user.email, email: user.email, role: 'Owner' };
+      STATE.route = 'dash';
+    }
+  }
+
+  // Listen for auth changes (token refresh, sign-out)
+  DB.onAuthChange(async (event, session) => {
+    if (event === 'SIGNED_OUT') {
+      const th = STATE.theme, lg = STATE.lang;
+      STATE = blankState(); STATE.theme = th; STATE.lang = lg;
+      go('landing');
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
