@@ -43,8 +43,8 @@ async function agentSuggestIngredients(itemName, description, restaurantType) {
     const start = reply.indexOf('[');
     const end = reply.lastIndexOf(']') + 1;
     const parsed = JSON.parse(reply.slice(start, end));
-    // Validate: array of [string, number]
-    if (Array.isArray(parsed) && parsed.every(r => Array.isArray(r) && r.length === 2)) {
+    // Validate: array of [string, number] or [string, number, string]
+    if (Array.isArray(parsed) && parsed.every(r => Array.isArray(r) && r.length >= 2)) {
       return parsed;
     }
     throw new Error('Invalid recipe format');

@@ -150,10 +150,12 @@ async function importParsed(parsed) {
       recipeList = suggestIngredients(it.n + ' ' + (it.desc || ''));
     }
 
-    const recipe = recipeList.map(([inN, qty]) => {
+    const recipe = recipeList.map(([inN, qty, unit]) => {
       let ig = STATE.ings.find(x => x.n === inN);
       if (!ig) {
-        ig = { id: uid(), n: inN, sup: STATE.sups[0] ? STATE.sups[0].n : 'Unassigned', unit: qty < 8 ? 'pc' : 'kg', price: Math.round(8 + Math.random() * 30), yield: 0.92, est: true, hist: [] };
+        // 'pc' = sold by piece; 'g' or 'ml' = weight/volume, stored as 'kg' (cost = qty/1000 * price_per_kg)
+        const storedUnit = unit === 'pc' ? 'pc' : 'kg';
+        ig = { id: uid(), n: inN, sup: STATE.sups[0] ? STATE.sups[0].n : 'Unassigned', unit: storedUnit, price: Math.round(8 + Math.random() * 30), yield: 0.92, est: true, hist: [] };
         ig.hist = [{ d: 'now', p: ig.price }];
         STATE.ings.push(ig);
       }

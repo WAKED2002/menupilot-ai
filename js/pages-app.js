@@ -288,7 +288,783 @@ PAGES.billing = () => `<div class="grid g3">
  <div class="card" style="margin-top:13px"><h4>Invoices</h4><table><tr><th>Date</th><th>Invoice</th><th class="num">Amount (SAR)</th><th>Status</th></tr>
  ${STATE.invoices.map(v => `<tr><td>${v.d}</td><td class="note">${v.n}</td><td class="num">${v.amt}</td><td><span class="tag ${v.st === 'Paid' ? 'ok' : 'info'}">${v.st}</span></td></tr>`).join('')}</table></div>`;
 
-// ── Stub pages (full implementations in original file) ────────
-['branch','cats','recipe','ing','sup','proc','inv','emp','gov','hidden','mktg','apps','alloc','profit','reports'].forEach(k => {
-  if (!PAGES[k]) PAGES[k] = () => `<div class="card"><div class="empty"><div class="big">◇</div><h5>${T(k)}</h5><p>Open the original file for the full ${T(k)} implementation, or this page will be built out next.</p></div></div>`;
-});
+// ── Branch Performance ────────────────────────────────────────
+PAGES.branch = () => {
+  if (!STATE.menu.length) return emptyMenuState();
+  const t = totals(); const brs = STATE.org.branches; const i = Math.min(STATE.branchView || 0, brs.length - 1);
+  const w = brs.length === 1 ? [1] : brs.map((_, k) => k === 0 ? 0.58 : 0.42 / (brs.length - 1));
+  const f = w[i];
+  return `<div class="tabs">${brs.map((b, k) => `<button class="${k === i ? 'on' : ''}" onclick="STATE.branchView=${k};render()">${esc(b)}</button>`).join('')}</div>
+  <div class="grid g4">
+   ${kpi('Branch revenue', SAR(Math.round(t.rev * f)), Math.round(f * 100) + '% of total')}
+   ${kpi('Branch net profit', SAR(Math.round(t.net * f)), '', t.net > 0 ? 'up' : 'down')}
+   ${kpi('Food cost %', pct(t.foodPct + (i ? 1.2 : -0.4)), 'vs ' + pct(t.foodPct) + ' blended')}
+   ${kpi('Orders / month', fmt(Math.round(totalUnits() * f)))}</div>
+  <div class="card" style="margin-top:13px"><h4>Branch-specific pricing</h4>
+   <p class="note" style="margin-bottom:10px">Items can carry a different price per branch (e.g., mall location +8%). Set branch overrides in the Pricing Center → Branch-specific strategy.</p>
+   <table><tr><th>Item</th><th class="num">Base price</th><th class="num">${esc(brs[i])} price</th></tr>
+   ${STATE.menu.slice(0, 5).map(m => `<tr><td>${esc(m.n)}</td><td class="num">${SAR2(m.price)}</td><td class="num">${SAR2(m.price * (i ? 1.08 : 1))}</td></tr>`).join('')}</table></div>`;
+};
+
+// ── Categories ────────────────────────────────────────────────
+PAGES.cats = () => `<div class="card"><h4>Categories <span class="note">${STATE.org.type} template</span></h4>
+ <table><tr><th>Category</th><th class="num">Items</th><th></th></tr>
+ ${STATE.cats.map((c, i) => `<tr><td><input class="tbl-edit" style="width:220px;text-align:start" value="${esc(c)}" onchange="renameCat(${i},this.value)"></td><td class="num">${STATE.menu.filter(m => m.cat === c).length}</td>
+  <td><button class="btn btn-sm btn-danger" onclick="STATE.cats.splice(${i},1);render()">Remove</button></td></tr>`).join('')}</table>
+ <div style="display:flex;gap:9px;margin-top:12px"><input class="tbl-edit" id="ncat" style="width:220px;text-align:start" placeholder="New category">
+ <button class="btn btn-sm btn-line" onclick="if($('ncat').value.trim()){STATE.cats.push($('ncat').value.trim());render();toast('Category added')}">+ Add</button></div></div>`;
+
+function renameCat(i, v) {
+  v = v.trim(); if (!v) { render(); return; }
+  const old = STATE.cats[i];
+  STATE.cats[i] = v; STATE.menu.forEach(m => { if (m.cat === old) m.cat = v; });
+  render(); toast('Category renamed — ' + STATE.menu.filter(m => m.cat === v).length + ' item(s) updated');
+}
+
+// ── Menu Items ────────────────────────────────────────────────
+PAGES.menu = () => {
+  if (!STATE.menu.length) return emptyMenuState();
+  return `<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-navy btn-sm" onclick="addItemModal()">+ Add menu item</button></div>
+  <div class="card"><table><tr><th>Item</th><th>Category</th><th class="num">Price</th><th class="num">True cost</th><th class="num">Margin</th><th>Status</th><th></th></tr>
+  ${STATE.menu.map(m => `<tr><td><b>${esc(m.n)}</b><div class="note">${m.sold} sold/mo · ${Math.round(m.delShare * 100)}% via delivery</div></td><td>${esc(m.cat)}</td>
+   <td class="num"><input class="tbl-edit" type="number" value="${m.price}" onchange="m_(${q(m.id)}).price=+this.value;render();toast('Price updated — all margins recalculated')"></td>
+   <td class="num">${SAR2(cost(m))}</td><td class="num ${marginPct(m) < 20 ? 'down' : 'up'}">${pct(marginPct(m))}</td>
+   <td><span class="tag ${m.status === 'approved' ? 'ok' : 'warn'}">${m.status === 'approved' ? 'Active' : 'Recipe pending'}</span>${m.reprice ? ' <span class="tag bad">reprice</span>' : ''}</td>
+   <td style="white-space:nowrap"><button class="btn btn-sm btn-line" onclick="editItemModal(${q(m.id)})">Edit</button>
+   <button class="btn btn-sm btn-danger" onclick="STATE.menu=STATE.menu.filter(x=>x.id!==${q(m.id)});render();toast('Item removed','bad')">Remove</button></td></tr>`).join('')}</table></div>`;
+};
+
+function editItemModal(id) {
+  const m = m_(id); if (!m) return;
+  modal(`<h3>Edit — ${esc(m.n)}</h3>
+   <div class="field"><label>Name</label><input id="eiN" value="${esc(m.n)}"></div>
+   <div class="field"><label>Category</label><select id="eiC">${STATE.cats.map(c => `<option ${c === m.cat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+   <div class="field"><label>Description</label><textarea id="eiD" rows="2">${esc(m.desc || '')}</textarea></div>
+   <div class="grid g2">
+    <div class="field"><label>Price (SAR)</label><input id="eiP" type="number" step="0.5" value="${m.price}"></div>
+    <div class="field"><label>Sold / month</label><input id="eiS" type="number" value="${m.sold}"></div>
+    <div class="field"><label>Delivery share %</label><input id="eiDel" type="number" value="${Math.round(m.delShare * 100)}"></div>
+    <div class="field"><label>Labor minutes</label><input id="eiL" type="number" step="0.5" value="${m.laborMin}"></div></div>
+   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">Cancel</button>
+   <button class="btn btn-gold" onclick="saveItemEdit(${q(m.id)})">Save changes</button></div>`);
+}
+function saveItemEdit(id) {
+  const m = m_(id); if (!m) return;
+  const n = $('eiN').value.trim(); if (!n) { toast('Name required', 'bad'); return; }
+  m.n = n; m.cat = $('eiC').value; m.desc = $('eiD').value; m.price = +$('eiP').value || m.price;
+  m.sold = Math.max(1, +$('eiS').value || m.sold); m.delShare = Math.max(0, Math.min(100, +$('eiDel').value)) / 100; m.laborMin = +$('eiL').value || m.laborMin;
+  closeModal(); render(); toast('Item updated — costs & margins recalculated');
+}
+function addItemModal() {
+  modal(`<h3>Add menu item</h3>
+   <div class="field"><label>Name</label><input id="niN" placeholder="Grilled Seabass"></div>
+   <div class="field"><label>Category</label><select id="niC">${STATE.cats.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+   <div class="grid g2"><div class="field"><label>Price (SAR)</label><input id="niP" type="number" value="59"></div>
+   <div class="field"><label>Estimated monthly sales</label><input id="niS" type="number" value="200"></div></div>
+   <div class="alert info"><span>✦</span><div>Recipe Intelligence will draft ingredients automatically from the item name.</div></div>
+   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">Cancel</button>
+   <button class="btn btn-gold" onclick="addItem()">Add & draft recipe</button></div>`);
+}
+function addItem() {
+  const n = $('niN').value.trim(); if (!n) { toast('Name required', 'bad'); return; }
+  const recipe = suggestIngredients(n).map(([inN, qty]) => {
+    let ig = STATE.ings.find(x => x.n === inN);
+    if (!ig) { const pr = Math.round(10 + Math.random() * 35); ig = { id: uid(), n: inN, sup: STATE.sups[0]?.n || 'Unassigned', unit: qty < 8 ? 'pc' : 'kg', price: pr, yield: 0.92, est: true, hist: [{ d: 'now', p: pr }] }; STATE.ings.push(ig); }
+    return [ig.id, qty];
+  });
+  STATE.menu.push({ id: uid(), n, cat: $('niC').value, price: +$('niP').value || 50, desc: '', recipe, laborMin: 6, pack: 1.5, sold: +$('niS').value || 100, delShare: .3, status: 'pending', reprice: false });
+  closeModal(); render(); toast('Item added — recipe drafted by Recipe Intelligence');
+}
+
+// ── Recipe Builder ────────────────────────────────────────────
+PAGES.recipe = () => {
+  if (!STATE.menu.length) return emptyMenuState();
+  const pend = STATE.menu.filter(m => m.status !== 'approved');
+  return `${pend.length ? `<div class="alert warn"><span>◆</span><div><b>${pend.length} recipe(s)</b> drafted by Recipe Intelligence are awaiting your approval.</div></div>` : ''}
+  ${STATE.menu.map(m => recipeCard(m)).join('')}`;
+};
+
+// ── Ingredient Center ─────────────────────────────────────────
+PAGES.ing = () => {
+  if (!STATE.ings.length) return emptyMenuState();
+  const estN = STATE.ings.filter(i => i.est).length;
+  return `${estN ? `<div class="alert warn"><span>◆</span><div><b>${estN} ingredient price(s) are AI estimates.</b> For accurate costing, set your real purchase prices below or process an invoice in Procurement — every recipe recosts instantly.</div></div>` : ''}
+  <div class="card" style="margin-bottom:13px"><h4>Import / export ingredients <span class="note">Excel-compatible</span></h4>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button class="btn btn-sm btn-line" onclick="exportIngredientsExcel()">⤓ Export to Excel</button>
+    <label class="btn btn-sm btn-line" style="margin:0">⤒ Import file (.xlsx/.csv)
+     <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importIngredientsFile(this)"></label>
+    <button class="btn btn-sm btn-line" onclick="ingredientImportModal()">⌨ Paste / import from URL</button>
+    <span class="note" style="margin-inline-start:auto">${STATE.ings.length} ingredient(s) · columns: Name, Supplier, Unit, Price (SAR), Yield %</span>
+   </div></div>
+  <div class="card"><h4>Ingredient database <span class="note">prices are editable — every recipe recosts instantly</span></h4>
+  <table><tr><th>Ingredient</th><th>Supplier</th><th>Unit</th><th class="num">Price (SAR)</th><th class="num">Yield %</th><th>Trend</th><th class="num">Used in</th></tr>
+  ${STATE.ings.map(i => `<tr><td>${esc(i.n)}${i.est ? ' <span class="tag warn">estimate</span>' : ''}</td><td class="note">${esc(i.sup)}</td><td>${i.unit}</td>
+   <td class="num"><input class="tbl-edit" type="number" step="0.5" value="${i.price}" onchange="updIngPrice(${q(i.id)},+this.value)"></td>
+   <td class="num"><input class="tbl-edit" type="number" step="1" value="${Math.round((i.yield || 1) * 100)}" onchange="STATE.ings.find(x=>x.id===${q(i.id)}).yield=+this.value/100;render()"></td>
+   <td>${spark(i.hist)}</td><td class="num">${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} recipes</td></tr>`).join('')}</table></div>`;
+};
+
+function updIngPrice(id, p) {
+  const i = STATE.ings.find(x => x.id === id); const old = i.price; i.price = p; i.est = false;
+  i.hist.push({ d: 'now', p }); if (i.hist.length > 8) i.hist.shift();
+  if (p > old * 1.05) {
+    STATE.notifications.unshift({ t: 'Procurement Analyst', m: `${i.n} up ${pct((p / old - 1) * 100)} — ${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} recipes recosted. Check cheaper suppliers.`, k: 'bad', time: 'now' });
+    toast(`${i.n} +${pct((p / old - 1) * 100)} — alert raised & recipes recosted`, 'bad');
+  } else toast('Price updated — recipes recosted');
+  render();
+}
+
+// ── Suppliers ─────────────────────────────────────────────────
+PAGES.sup = () => `<div style="display:flex;justify-content:flex-end;margin-bottom:13px">
+   <button class="btn btn-navy btn-sm" onclick="supplierModal()">+ Add supplier</button></div>
+ <div class="grid g2">${STATE.sups.length ? STATE.sups.map((sp, si) => {
+  const items = STATE.ings.filter(i => i.sup === sp.n);
+  const monthlySpend = Math.round(STATE.menu.reduce((a, m) => a + m.recipe.reduce((b, [id, qy]) => { const i = ingById(id); return i && i.sup === sp.n ? b + (i.unit === 'pc' ? qy * i.price : qy / 1000 * i.price) * m.sold : b; }, 0), 0));
+  return `<div class="card"><h4>${esc(sp.n)} <span style="display:flex;gap:6px;align-items:center">
+    <span class="tag info">★ ${sp.rating}</span>
+    <button class="btn btn-sm btn-line" onclick="supplierModal(${si})">Edit</button>
+    <button class="btn btn-sm btn-danger" onclick="delSupplier(${si})">Delete</button></span></h4>
+   <p class="note">${esc(sp.cat)}</p>
+   <table>
+    <tr><td>Payment terms</td><td class="num">${esc(sp.terms)}</td></tr>
+    <tr><td>Delivery days</td><td class="num">${esc(sp.days)}</td></tr>
+    <tr><td>Items supplied</td><td class="num">${items.length}</td></tr>
+    <tr><td>Monthly spend (est.)</td><td class="num">${SAR(monthlySpend)}</td></tr>
+   </table>
+   ${items.length ? `<table style="margin-top:10px"><tr><th>Item</th><th>Unit</th><th class="num">Qty/order</th><th class="num">Price (SAR)</th></tr>
+    ${items.map(i => `<tr><td>${esc(i.n)}</td><td>${esc(i.unit)}</td><td class="num">${i.orderQty ? fmt(i.orderQty) : '—'}</td><td class="num">${SAR2(i.price)}</td></tr>`).join('')}
+   </table>` : '<p class="note" style="margin-top:8px">No items linked yet — click Edit to add what you buy from this supplier.</p>'}
+   </div>`;
+}).join('') : '<div class="card"><div class="empty"><div class="big">⛟</div><h5>No suppliers yet</h5><p>Add your first supplier.</p></div></div>'}</div>`;
+
+let _supDraftItems = [];
+function supplierModal(idx) {
+  const editing = (typeof idx === 'number');
+  const sp = editing ? STATE.sups[idx] : { n: '', cat: '', terms: 'Net 15', days: '', rating: 4.5 };
+  _supDraftItems = editing ? STATE.ings.filter(i => i.sup === sp.n).map(i => ({ id: i.id, n: i.n, unit: i.unit, orderQty: i.orderQty || 0, price: i.price })) : [];
+  const idxAttr = editing ? idx : -1;
+  modal(`<h3>${editing ? 'Edit supplier' : 'Add supplier'}</h3>
+   <div class="grid g2">
+    <div class="field"><label>Name</label><input id="smN" value="${esc(sp.n)}" placeholder="Gulf Fresh Fish Co."></div>
+    <div class="field"><label>Category</label><input id="smC" value="${esc(sp.cat || '')}" placeholder="Fresh fish"></div>
+    <div class="field"><label>Payment terms</label><input id="smT" value="${esc(sp.terms || '')}" placeholder="Net 15"></div>
+    <div class="field"><label>Delivery days</label><input id="smD" value="${esc(sp.days || '')}" placeholder="Sat · Mon · Wed"></div>
+   </div>
+   <h4 style="margin:6px 0 8px">Items you buy from this supplier</h4>
+   <div id="supItems"></div>
+   <button class="btn btn-sm btn-line" onclick="supAddItemRow()">+ Add item</button>
+   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-line" onclick="closeModal()">Cancel</button>
+    <button class="btn btn-gold" onclick="saveSupplier(${idxAttr})">${editing ? 'Save changes' : 'Add supplier'}</button>
+   </div>`);
+  renderSupItems();
+}
+function renderSupItems() {
+  const host = $('supItems'); if (!host) return;
+  if (!_supDraftItems.length) { host.innerHTML = '<p class="note" style="padding:8px 0">No items yet. Click "+ Add item" to list what you buy.</p>'; return; }
+  host.innerHTML = `<table style="margin-bottom:10px">
+    <tr><th>Item name</th><th>Unit</th><th class="num">Qty / order</th><th class="num">Unit price (SAR)</th><th></th></tr>
+    ${_supDraftItems.map((it, k) => `<tr>
+      <td><input class="tbl-edit" style="width:170px;text-align:start" value="${esc(it.n)}" oninput="_supDraftItems[${k}].n=this.value" placeholder="Hamour fish"></td>
+      <td><select class="tbl-edit" style="width:70px;text-align:start" onchange="_supDraftItems[${k}].unit=this.value">
+        ${['kg', 'L', 'pc', 'g', 'box', 'crate'].map(u => `<option ${it.unit === u ? 'selected' : ''}>${u}</option>`).join('')}
+      </select></td>
+      <td class="num"><input class="tbl-edit" type="number" step="0.1" value="${it.orderQty || ''}" oninput="_supDraftItems[${k}].orderQty=+this.value||0" placeholder="25"></td>
+      <td class="num"><input class="tbl-edit" type="number" step="0.5" value="${it.price || ''}" oninput="_supDraftItems[${k}].price=+this.value||0" placeholder="62"></td>
+      <td><button class="btn btn-sm btn-danger" onclick="_supDraftItems.splice(${k},1);renderSupItems()">✕</button></td>
+    </tr>`).join('')}
+   </table>`;
+}
+function supAddItemRow() { _supDraftItems.push({ id: null, n: '', unit: 'kg', orderQty: 0, price: 0 }); renderSupItems(); }
+function saveSupplier(idx) {
+  const n = $('smN').value.trim();
+  if (!n) { toast('Supplier name required', 'bad'); return; }
+  const editing = idx >= 0;
+  if (STATE.sups.some((x, i) => i !== idx && x.n.toLowerCase() === n.toLowerCase())) { toast('A supplier with that name already exists', 'bad'); return; }
+  const valid = _supDraftItems.filter(it => (it.n || '').trim() && it.price > 0);
+  if (_supDraftItems.length && valid.length !== _supDraftItems.length) { toast('Each item row needs a name and a price > 0', 'bad'); return; }
+  const oldName = editing ? STATE.sups[idx].n : null;
+  const supObj = { n, cat: $('smC').value.trim() || '—', terms: $('smT').value.trim() || '—', days: $('smD').value.trim() || '—', rating: editing ? STATE.sups[idx].rating : 4.5 };
+  if (editing) { STATE.sups[idx] = supObj; if (oldName && oldName !== n) STATE.ings.forEach(i => { if (i.sup === oldName) i.sup = n; }); }
+  else STATE.sups.push(supObj);
+  let added = 0, updated = 0; const recosted = new Set();
+  valid.forEach(it => {
+    const name = it.n.trim();
+    let ig = it.id ? STATE.ings.find(x => x.id === it.id) : STATE.ings.find(x => x.n.toLowerCase() === name.toLowerCase());
+    if (ig) {
+      const oldPrice = ig.price; ig.n = name; ig.unit = it.unit; ig.sup = n; ig.orderQty = it.orderQty || 0;
+      if (it.price && it.price !== oldPrice) {
+        ig.price = it.price; ig.est = false; ig.hist = ig.hist || []; ig.hist.push({ d: 'sup', p: it.price }); if (ig.hist.length > 8) ig.hist.shift(); updated++;
+        if (oldPrice && it.price > oldPrice * 1.05) STATE.notifications.unshift({ t: 'Procurement Analyst', m: `${name} up ${pct((it.price / oldPrice - 1) * 100)} at ${n} — recipes recosted.`, k: 'bad', time: 'now' });
+        STATE.menu.forEach(m => { if (m.recipe.some(r => r[0] === ig.id)) recosted.add(m.n); });
+      }
+    } else { ig = { id: uid(), n: name, sup: n, unit: it.unit, price: it.price, yield: 1, orderQty: it.orderQty || 0, est: false, hist: [{ d: 'sup', p: it.price }] }; STATE.ings.push(ig); added++; }
+  });
+  closeModal(); render();
+  const parts = [editing ? 'Supplier updated' : 'Supplier added'];
+  if (added) parts.push(added + ' new item(s)');
+  if (updated) parts.push(updated + ' price(s) updated');
+  if (recosted.size) parts.push(recosted.size + ' recipe(s) recosted');
+  toast(parts.join(' — '));
+}
+function delSupplier(si) {
+  const sp = STATE.sups[si]; const moved = STATE.ings.filter(i => i.sup === sp.n).length;
+  STATE.ings.forEach(i => { if (i.sup === sp.n) i.sup = 'Unassigned'; });
+  STATE.sups.splice(si, 1); render();
+  toast(sp.n + ' deleted' + (moved ? ' — ' + moved + ' ingredient(s) moved to "Unassigned"' : ''), 'bad');
+}
+
+// ── Procurement / Invoice Capture ─────────────────────────────
+PAGES.proc = () => {
+  if (!STATE.ings.length) return emptyMenuState();
+  const changes = STATE.ings.filter(i => i.hist.length > 1).map(i => ({ i, ch: (i.hist.at(-1).p / i.hist[0].p - 1) * 100 })).sort((a, b) => b.ch - a.ch);
+  const li = STATE.lastInv;
+  return `<div class="card" style="margin-bottom:13px"><h4>Invoice capture <span class="tag gold">MarginEdge-style · Agent E</span></h4>
+   <p class="note" style="margin-bottom:10px">Paste invoice lines — one per line as <b>ingredient name &nbsp;price</b>. The agent matches your ingredient database, updates purchase prices, <b>recosts every affected recipe instantly</b>, and raises alerts on increases over 5%.</p>
+   <div class="field"><textarea id="invTxt" rows="5" placeholder="Hamour fish  64.5&#10;Shrimp peeled  61&#10;Olive oil  25"></textarea></div>
+   <button class="btn btn-navy btn-sm" onclick="applyInvoice()">▶ Process invoice</button>
+   ${li ? `<div style="margin-top:12px">
+     ${li.matched.length ? `<div class="alert good"><span>✓</span><div><b>${li.matched.length} line(s) matched & applied:</b> ${li.matched.map(x => esc(x.n) + ' → SAR ' + x.p + (x.delta > 5 ? ' (▲+' + x.delta.toFixed(1) + '%)' : '')).join(' · ')}. All recipes recosted.</div></div>` : ''}
+     ${li.unmatched.length ? `<div class="alert warn"><span>◆</span><div><b>${li.unmatched.length} unmatched:</b> ${li.unmatched.map(esc).join(' · ')} — add them in the Ingredient Center, then re-process.</div></div>` : ''}
+   </div>` : ''}
+  </div>
+  <div class="grid g2">
+  <div class="card"><h4>Record a single price</h4>
+   <div class="field"><label>Ingredient</label><select id="prIng">${STATE.ings.map(i => `<option value="${i.id}">${esc(i.n)} — now SAR ${i.price}/${i.unit}</option>`).join('')}</select></div>
+   <div class="field"><label>New quoted price (SAR)</label><input id="prP" type="number" step="0.5"></div>
+   <button class="btn btn-line btn-sm" onclick="if(+$('prP').value){updIngPrice($('prIng').value,+$('prP').value)}else toast('Enter a price','bad')">Record price</button>
+   <h4 style="margin-top:18px">Cheaper alternative suggestions</h4>
+   ${changes.filter(x => x.ch > 4).slice(0, 3).map(x => `<div class="alert warn"><span>◆</span><div><b>${esc(x.i.n)}</b> trending +${pct(x.ch)} at ${esc(x.i.sup)}. ${STATE.sups.filter(sx => sx.n !== x.i.sup && sx.n !== 'In-house prep').slice(0, 1).map(sx => `Ask <b>${esc(sx.n)}</b> for a quote.`).join('') || 'Request quotes from alternative suppliers.'}</div></div>`).join('') || '<p class="note">No rising-price ingredients right now.</p>'}
+  </div>
+  <div class="card"><h4>Price change log</h4>
+   <table><tr><th>Ingredient</th><th>Supplier</th><th class="num">Change</th><th>Trend</th></tr>
+   ${changes.slice(0, 12).map(x => `<tr><td>${esc(x.i.n)}${x.i.est ? ' <span class="tag warn">estimate</span>' : ''}</td><td class="note">${esc(x.i.sup)}</td><td class="num ${x.ch > 0 ? 'down' : 'up'}">${x.ch > 0 ? '+' : ''}${pct(x.ch)}</td><td>${spark(x.i.hist)}</td></tr>`).join('') || '<tr><td colspan="4" class="note">No price history yet — process an invoice to start tracking.</td></tr>'}</table></div></div>`;
+};
+
+function invMatchProc(text) {
+  const parsed = parseMenuText(text);
+  const matched = [], unmatched = [];
+  parsed.forEach(line => {
+    const lo = line.n.toLowerCase();
+    const hit = STATE.ings.find(i => { const a = i.n.toLowerCase(); return a === lo || a.includes(lo) || lo.includes(a.split(' (')[0]); });
+    if (hit) matched.push({ id: hit.id, n: hit.n, p: line.price, delta: (line.price / hit.price - 1) * 100 });
+    else unmatched.push(line.n);
+  });
+  return { matched, unmatched };
+}
+function applyInvoice() {
+  const txt = ($('invTxt') && $('invTxt').value) || '';
+  if (txt.trim().length < 3) { toast('Paste invoice lines first', 'bad'); return; }
+  const r = invMatchProc(txt);
+  if (!r.matched.length && !r.unmatched.length) { toast('No "name + price" lines detected', 'bad'); return; }
+  r.matched.forEach(x => {
+    const i = STATE.ings.find(g => g.id === x.id); const old = i.price;
+    i.price = x.p; i.est = false; i.hist.push({ d: 'inv', p: x.p }); if (i.hist.length > 8) i.hist.shift();
+    if (x.p > old * 1.05) STATE.notifications.unshift({ t: 'Procurement Analyst', m: i.n + ' up ' + pct((x.p / old - 1) * 100) + ' on latest invoice — recipes recosted.', k: 'bad', time: 'now' });
+  });
+  STATE.lastInv = r; render();
+  toast(r.matched.length + ' price(s) applied — every affected recipe recosted' + (r.unmatched.length ? ' · ' + r.unmatched.length + ' unmatched' : ''));
+}
+
+// ── Inventory Variance ────────────────────────────────────────
+PAGES.inv = () => {
+  if (!STATE.ings.length) return emptyMenuState();
+  return `<div class="card"><h4>Inventory variance <span class="note">opening + purchases − consumption = expected closing; variance vs counted</span></h4>
+  <table><tr><th>Ingredient</th><th class="num">Opening</th><th class="num">Purchases</th><th class="num">Consumed (recipes)</th><th class="num">Expected close</th><th class="num">Counted</th><th class="num">Variance</th></tr>
+  ${STATE.ings.slice(0, 10).map((i, k) => {
+    const cons = STATE.menu.reduce((a, m) => a + m.recipe.reduce((b, [id, qy]) => id === i.id ? b + (i.unit === 'pc' ? qy : qy / 1000) * m.sold : b, 0), 0);
+    const op = cons * 0.3, pur = cons * 1.05, exp = op + pur - cons, cnt = exp * (k % 4 === 0 ? 0.93 : 0.99), va = (cnt - exp) / (exp || 1) * 100;
+    return `<tr><td>${esc(i.n)}</td><td class="num">${op.toFixed(0)}</td><td class="num">${pur.toFixed(0)}</td><td class="num">${cons.toFixed(0)}</td><td class="num">${exp.toFixed(0)}</td><td class="num">${cnt.toFixed(0)}</td><td class="num ${va < -3 ? 'down' : ''}">${va.toFixed(1)}%</td></tr>`;
+  }).join('')}</table>
+  <p class="note" style="margin-top:9px">Units: kg (or pc). Variance beyond −3% feeds the Shrinkage line in Hidden Costs.</p></div>`;
+};
+
+// ── Employees ─────────────────────────────────────────────────
+PAGES.emp = () => {
+  const tot = laborPool();
+  return `<div class="grid g3">${kpi('Headcount', STATE.emps.length)}${kpi('True monthly cost', SAR(Math.round(tot)))}
+  ${kpi('Avg multiplier', (STATE.emps.length ? (tot / STATE.emps.reduce((a, e) => a + e.basic, 0)) : 0).toFixed(2) + '×', 'of basic salary')}</div>
+  <div class="card" style="margin-top:13px"><h4>Employee Cost Engine <span class="note">edit basic salary — labor cost per dish recalculates</span></h4>
+  ${STATE.emps.length ? `<table><tr><th>Employee</th><th class="num">Basic</th><th class="num">Housing+Trans+Food</th><th class="num">GOSI</th><th class="num">Visa/Iqama/Med/Recruit</th><th class="num">True cost</th><th></th></tr>
+  ${STATE.emps.map(e => `<tr><td>${esc(e.n)}<div class="note">${esc(e.pos)} · ${e.saudi ? 'Saudi' : 'Expat'} · GOSI ${(e.gosi * 100).toFixed(2)}%</div></td>
+   <td class="num"><input class="tbl-edit" type="number" value="${e.basic}" onchange="STATE.emps.find(x=>x.id===${q(e.id)}).basic=+this.value;render();toast('Labor rate recalculated')"></td>
+   <td class="num">${fmt(e.hous + e.trans + e.food)}</td><td class="num">${fmt(Math.round(e.basic * e.gosi))}</td>
+   <td class="num">${fmt(e.visa + e.iqama + e.med + e.recr)}</td><td class="num"><b>${fmt(Math.round(empMonthly(e)))}</b></td>
+   <td><button class="btn btn-sm btn-danger" onclick="STATE.emps=STATE.emps.filter(x=>x.id!==${q(e.id)});render()">✕</button></td></tr>`).join('')}</table>`
+    : '<div class="empty"><div class="big">⬢</div><h5>No employees</h5><p>Add staff in onboarding step 7.</p></div>'}
+  <p class="note" style="margin-top:9px">Direct labor per dish = station minutes × blended true cost per minute (${STATE.menu.length ? ('SAR ' + laborRate().toFixed(2) + '/min') : '—'}), allocating 100% of payroll across actual plates sold.</p></div>`;
+};
+
+// ── Government Fees ───────────────────────────────────────────
+PAGES.gov = () => {
+  const tot = STATE.gov.reduce((a, g) => a + g.amt, 0);
+  return `<div class="grid g3">${kpi('Tracked fees', STATE.gov.length + ' items', 'all editable')}
+  ${kpi('Monthly allocation', SAR(Math.round(govMonthly())), 'incl. per-employee fees')}
+  ${kpi('Avg per dish', STATE.menu.length ? SAR2(govMonthly() / totalUnits()) : '—', 'revenue-share allocation')}</div>
+  <div class="card" style="margin-top:13px"><h4>Saudi Compliance Cost Agent <span class="tag gold">Agent G</span> <span class="note">amounts change — edit them and every dish recosts</span></h4>
+  <table><tr><th>Fee</th><th>Authority</th><th class="num">Amount (SAR)</th><th>Cycle</th></tr>
+  ${STATE.gov.map(g => `<tr><td>${esc(g.n)}</td><td class="note">${esc(g.auth)}</td>
+   <td class="num"><input class="tbl-edit" type="number" value="${g.amt}" onchange="g_(${q(g.id)}).amt=+this.value;render();toast('Government allocation updated across all dishes')"></td>
+   <td class="note">${esc(g.cycle)}</td></tr>`).join('')}</table>
+  <p class="note" style="margin-top:9px">GOSI employer share is computed in the Employee Cost Engine to avoid double counting.</p></div>`;
+};
+
+// ── Hidden Costs ──────────────────────────────────────────────
+PAGES.hidden = () => {
+  const grps = [...new Set(STATE.hidden.map(h => h.grp))];
+  return `<div class="grid g3">${kpi('Hidden costs / month', SAR(hiddenMonthly()))}${kpi('Largest group', grps.sort((a, b) => hiddenGroup(b) - hiddenGroup(a))[0] || '—')}${kpi('Avg per dish', STATE.menu.length ? SAR2(hiddenMonthly() / totalUnits()) : '—')}</div>
+  ${grps.map(g => `<div class="card" style="margin-top:13px"><h4>${g} <span class="note">${SAR(hiddenGroup(g))}/mo${g === 'Marketing' ? ' · manage in Marketing Costs page' : ''}</span></h4>
+  <table>${STATE.hidden.filter(h => h.grp === g).map(h => `<tr><td>${esc(h.n)}</td>
+   <td class="num"><input class="tbl-edit" type="number" value="${h.amt}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).amt=+this.value;render()"></td>
+   <td style="width:46px"><button class="btn btn-sm btn-danger" onclick="STATE.hidden=STATE.hidden.filter(x=>x.id!==${q(h.id)});render();toast('Cost line removed','bad')">✕</button></td></tr>`).join('')}</table></div>`).join('')}
+  <div class="card" style="margin-top:13px"><h4>Add hidden cost line</h4>
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <input class="tbl-edit" id="hcN" style="width:220px;text-align:start" placeholder="e.g. Grease trap cleaning">
+    <select class="tbl-edit" id="hcG" style="width:140px;text-align:start">${['Operations', 'Utilities', 'Technology', 'Marketing', 'Finance', 'Shrinkage'].map(g => `<option>${g}</option>`).join('')}</select>
+    <input class="tbl-edit" id="hcA" type="number" placeholder="SAR/mo" style="width:100px">
+    <button class="btn btn-sm btn-navy" onclick="if(!$('hcN').value.trim()||!+$('hcA').value){toast('Name and amount required','bad')}else{STATE.hidden.push({id:uid(),n:$('hcN').value.trim(),grp:$('hcG').value,amt:+$('hcA').value});render();toast('Cost line added')}">+ Add</button></div></div>`;
+};
+
+// ── Marketing Costs ───────────────────────────────────────────
+PAGES.mktg = () => {
+  const rows = STATE.hidden.filter(h => h.grp === 'Marketing');
+  const tot = hiddenGroup('Marketing'); const t = STATE.menu.length ? totals() : null;
+  const B = STATE.budget || (STATE.budget = { food: 32, labor: 20, mkt: 5 }); if (B.mkt === undefined) B.mkt = 5;
+  const pctRev = t ? tot / t.rev * 100 : 0;
+  return `<div class="grid g4">
+   ${kpi('Marketing / month', SAR(tot), rows.length + ' line items')}
+   ${kpi('% of revenue', t ? pct(pctRev) : '—', 'target ' + B.mkt + '%', t ? (pctRev <= B.mkt ? 'up' : 'down') : '')}
+   ${kpi('Avg per dish', t ? SAR2(tot / totalUnits()) : '—', 'revenue-share allocation')}
+   ${kpi('Delivery app marketing', pct(STATE.apps.reduce((a, x) => a + x.mkt * x.share, 0) / (STATE.apps.reduce((a, x) => a + x.share, 0) || 1)), 'blended · set per platform in Delivery Apps')}</div>
+  <div class="card" style="margin-top:13px"><h4>Marketing cost lines <span class="note">editable — they flow into every dish's marketing layer</span></h4>
+   <table><tr><th>Item</th><th class="num">SAR / month</th><th></th></tr>
+   ${rows.map(h => `<tr><td><input class="tbl-edit" style="width:240px;text-align:start" value="${esc(h.n)}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).n=this.value"></td>
+    <td class="num"><input class="tbl-edit" type="number" value="${h.amt}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).amt=+this.value;render();toast('Marketing allocation updated across all dishes')"></td>
+    <td><button class="btn btn-sm btn-danger" onclick="STATE.hidden=STATE.hidden.filter(x=>x.id!==${q(h.id)});render();toast('Marketing line removed','bad')">✕</button></td></tr>`).join('') || '<tr><td colspan="3" class="note">No marketing lines yet — add your first below.</td></tr>'}</table>
+   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+    <input class="tbl-edit" id="mkN" style="width:230px;text-align:start" placeholder="e.g. Influencer campaign — Riyadh Season">
+    <input class="tbl-edit" id="mkA" type="number" placeholder="SAR/mo" style="width:110px">
+    <button class="btn btn-sm btn-navy" onclick="addMktLine()">+ Add marketing cost</button></div></div>
+  <div class="grid g2" style="margin-top:13px">
+   <div class="card"><h4>Marketing budget</h4>
+    <div class="field"><label>Target marketing % of revenue</label><input type="number" step="0.5" value="${B.mkt}" onchange="STATE.budget.mkt=+this.value;render()"></div>
+    ${t ? `<div class="alert ${pctRev <= B.mkt ? 'good' : 'bad'}"><span>${pctRev <= B.mkt ? '✓' : '▲'}</span><div>Actual ${pct(pctRev)} vs target ${B.mkt}% — ${pctRev <= B.mkt ? 'on budget.' : 'over by ' + pct(pctRev - B.mkt) + ' (' + SAR(Math.round(tot - t.rev * B.mkt / 100)) + '/month).'}</div></div>` : '<p class="note">Import your menu to compare against revenue.</p>'}
+   </div>
+   <div class="card"><h4>How marketing flows into costing</h4>
+    <p class="note">Each dish carries a marketing layer = monthly marketing pool × the dish's revenue share. Delivery-app marketing fees are <b>not</b> in this pool — they're charged per order inside the delivery layer so nothing is double-counted.</p></div></div>`;
+};
+function addMktLine() {
+  const n = $('mkN').value.trim(), a = +$('mkA').value;
+  if (!n || !a) { toast('Name and monthly amount required', 'bad'); return; }
+  STATE.hidden.push({ id: uid(), n, grp: 'Marketing', amt: a }); render(); toast('Marketing cost added — all dishes recosted');
+}
+
+// ── Delivery Apps ─────────────────────────────────────────────
+PAGES.apps = () => {
+  if (!STATE.menu.length) return emptyMenuState();
+  const m = [...STATE.menu].sort((a, b) => b.sold * b.delShare - a.sold * a.delShare)[0];
+  return `<div class="card"><h4>Platform settings <span class="note">edit % — the blended rate feeds every item's delivery layer</span></h4>
+  <table><tr><th>Platform</th><th class="num">Commission %</th><th class="num">Marketing %</th><th class="num">Order share %</th><th class="num">Net margin on ${esc(m.n)}</th><th></th></tr>
+  ${STATE.apps.map((a, i) => {
+    const fee = (a.comm + a.mkt) / 100;
+    const direct = m.price - (ingCost(m) + m.pack + m.laborMin * laborRate() + ingCost(m) * 0.04);
+    const net = (direct - m.price * fee) / m.price * 100;
+    return `<tr><td>${esc(a.n)}</td>
+    <td class="num"><input class="tbl-edit" type="number" value="${a.comm}" onchange="STATE.apps[${i}].comm=+this.value;render()"></td>
+    <td class="num"><input class="tbl-edit" type="number" value="${a.mkt}" onchange="STATE.apps[${i}].mkt=+this.value;render()"></td>
+    <td class="num"><input class="tbl-edit" type="number" value="${a.share}" onchange="STATE.apps[${i}].share=+this.value;render()"></td>
+    <td class="num ${net < 25 ? 'down' : 'up'}">${pct(net)}</td>
+    <td style="width:46px"><button class="btn btn-sm btn-danger" onclick="STATE.apps.splice(${i},1);render();toast('Platform removed — blended rate updated','bad')">✕</button></td></tr>`;
+  }).join('')}</table>
+  <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
+   <input class="tbl-edit" id="apN" style="width:160px;text-align:start" placeholder="Platform name">
+   <input class="tbl-edit" id="apC" type="number" placeholder="Comm %" style="width:90px">
+   <input class="tbl-edit" id="apM" type="number" placeholder="Mktg %" style="width:90px">
+   <input class="tbl-edit" id="apS" type="number" placeholder="Share %" style="width:90px">
+   <button class="btn btn-sm btn-navy" onclick="if(!$('apN').value.trim()){toast('Platform name required','bad')}else{STATE.apps.push({n:$('apN').value.trim(),comm:+$('apC').value||20,mkt:+$('apM').value||0,share:+$('apS').value||10});render();toast('Platform added — blended rate updated')}">+ Add platform</button></div>
+  <div class="alert warn" style="margin-top:12px"><span>◆</span><div>Blended platform cost: <b>${pct(blendedAppRate() * 100)}</b> of delivery revenue. Items with delivery net margin < 25% should use a delivery-specific price.</div></div></div>`;
+};
+
+// ── Cost Allocation ───────────────────────────────────────────
+PAGES.alloc = () => {
+  if (!STATE.menu.length) return emptyMenuState();
+  const U = totalUnits();
+  const pools = [['Rent', STATE.rent], ['Government fees', govMonthly()], ['Utilities (incl. elec/water out of rent)', hiddenGroup('Utilities') + utilMonthly()], ['Extra fees & fines', xfeesMonthly()], ['Technology', hiddenGroup('Technology')], ['Marketing', hiddenGroup('Marketing')], ['Operations & finance', hiddenGroup('Operations') + hiddenGroup('Finance')], ['Shrinkage & waste', hiddenGroup('Shrinkage')]];
+  const mx = Math.max(...pools.map(p => p[1]));
+  return `<div class="card"><h4>Cost allocation method</h4>
+  <p class="note" style="margin-bottom:12px">Overhead pools allocate by <b>revenue share</b>. Labor allocates by station minutes; delivery by each item's delivery share × blended platform rate; ingredient waste at ${STATE.wastePct ?? 4}% of materials.</p>
+  <table><tr><th>Pool</th><th class="num">Monthly (SAR)</th><th style="width:38%"></th><th class="num">Avg / dish</th></tr>
+  ${pools.map(p => `<tr><td>${p[0]}</td><td class="num">${fmt(Math.round(p[1]))}</td><td><div class="bartrack"><i style="width:${p[1] / mx * 100}%"></i></div></td><td class="num">${SAR2(p[1] / U)}</td></tr>`).join('')}
+  <tr><td>Rent (edit)</td><td class="num" colspan="3"><input class="tbl-edit" type="number" value="${STATE.rent}" onchange="STATE.rent=+this.value;render();toast('Rent allocation updated')"> SAR / month</td></tr>
+  <tr><td>Ingredient waste % (edit)</td><td class="num" colspan="3"><input class="tbl-edit" type="number" step="0.5" value="${STATE.wastePct ?? 4}" onchange="STATE.wastePct=+this.value;render();toast('Waste % updated — all recipes recosted')"> % of materials per dish</td></tr></table></div>`;
+};
+
+// ── P&L / Profit ──────────────────────────────────────────────
+PAGES.profit = () => {
+  if (!STATE.menu.length) return emptyMenuState();
+  const t = totals();
+  const packT = STATE.menu.reduce((a, m) => a + m.pack * m.sold, 0);
+  const wasteT = STATE.menu.reduce((a, m) => a + ingCost(m) * (STATE.wastePct ?? 4) / 100 * m.sold, 0) + hiddenGroup('Shrinkage');
+  const delT = STATE.menu.reduce((a, m) => a + layers(m).del * m.sold, 0);
+  const opex = hiddenMonthly() - hiddenGroup('Shrinkage');
+  const B = STATE.budget || { food: 32, labor: 20 };
+  const byCat = STATE.cats.map(c => { const items = STATE.menu.filter(m => m.cat === c); if (!items.length) return null; return { c, rev: items.reduce((a, m) => a + m.price * m.sold, 0), pr: items.reduce((a, m) => a + margin(m) * m.sold, 0) }; }).filter(Boolean).sort((a, b) => b.pr - a.pr);
+  const pl = [['Revenue', t.rev, 1], ['Cost of goods (ingredients)', -t.ingT], ['Packaging', -packT], ['Waste & shrinkage', -wasteT],
+    ['— Gross profit', t.rev - t.ingT - packT - wasteT, 1], ['Labor (fully loaded)', -t.labor], ['Delivery commissions', -delT],
+    ['Operating expenses', -opex], ['Utilities (elec/water out of rent)', -utilMonthly()], ['Extra fees & fines', -xfeesMonthly()],
+    ['Rent', -t.rent], ['Government & compliance', -t.gov], ['— Net profit', t.net, 1]];
+  return `<div class="grid g2">
+  <div class="card"><h4>Live P&L <span class="note">month-to-date · updates with every edit & invoice</span></h4>
+   <table>${pl.map(r => `<tr style="${r[2] ? 'font-weight:700' : ''}"><td>${r[0]}</td><td class="num ${r[1] < 0 ? '' : 'up'}">${r[1] < 0 ? '(' + fmt(Math.round(-r[1])) + ')' : fmt(Math.round(r[1]))}</td></tr>`).join('')}</table>
+   <p class="note" style="margin-top:8px">Net margin ${pct(t.net / t.rev * 100)} of revenue.</p></div>
+  <div class="card"><h4>Budgets <span class="note">live tracking — set your targets</span></h4>
+   <div class="grid g2">
+    <div class="field"><label>Food cost target %</label><input type="number" value="${B.food}" onchange="STATE.budget.food=+this.value;render()"></div>
+    <div class="field"><label>Labor cost target %</label><input type="number" value="${B.labor}" onchange="STATE.budget.labor=+this.value;render()"></div></div>
+   <table><tr><th>Metric</th><th class="num">Actual</th><th class="num">Target</th><th>Status</th></tr>
+    <tr><td>Food cost %</td><td class="num">${pct(t.foodPct)}</td><td class="num">${B.food}%</td><td><span class="tag ${t.foodPct <= B.food ? 'ok' : 'bad'}">${t.foodPct <= B.food ? 'On budget' : 'Over by ' + pct(t.foodPct - B.food)}</span></td></tr>
+    <tr><td>Labor cost %</td><td class="num">${pct(t.laborPct)}</td><td class="num">${B.labor}%</td><td><span class="tag ${t.laborPct <= B.labor ? 'ok' : 'bad'}">${t.laborPct <= B.labor ? 'On budget' : 'Over by ' + pct(t.laborPct - B.labor)}</span></td></tr>
+    <tr><td>Prime cost %</td><td class="num">${pct(t.primePct)}</td><td class="num">${B.food + B.labor}%</td><td><span class="tag ${t.primePct <= B.food + B.labor ? 'ok' : 'warn'}">${t.primePct <= B.food + B.labor ? 'On budget' : 'Watch'}</span></td></tr></table></div></div>
+  <div class="grid g2" style="margin-top:13px">
+  <div class="card"><h4>Category profitability</h4><table><tr><th>Category</th><th class="num">Revenue</th><th class="num">Profit</th><th class="num">Margin</th></tr>
+   ${byCat.map(x => `<tr><td>${esc(x.c)}</td><td class="num">${fmt(x.rev)}</td><td class="num ${x.pr < 0 ? 'down' : ''}">${fmt(Math.round(x.pr))}</td><td class="num">${pct(x.pr / x.rev * 100)}</td></tr>`).join('')}</table></div>
+  <div class="card"><h4>Item ranking by total profit</h4><table><tr><th>Item</th><th class="num">Profit / mo</th><th>Class</th></tr>
+   ${[...STATE.menu].sort((a, b) => margin(b) * b.sold - margin(a) * a.sold).map(m => `<tr><td>${esc(m.n)}</td><td class="num ${margin(m) < 0 ? 'down' : ''}">${fmt(Math.round(margin(m) * m.sold))}</td><td><span class="tag ${mCls(m)}">${mLabel(m)}</span></td></tr>`).join('')}</table></div></div>`;
+};
+
+// ── Reports ───────────────────────────────────────────────────
+PAGES.reports = () => `<div class="grid g3">
+ ${[['Owner monthly pack', 'P&L summary, menu engineering, repricing list'], ['Accountant export', 'Cost layers per item, allocations, GOSI & gov fees'], ['Investor snapshot', 'Unit economics, break-even, growth levers'], ['Food cost report', 'Ingredient usage, price changes, variance'], ['Delivery channel report', 'Per-app profitability & commission impact'], ['Compliance cost report', 'All Saudi fees with cycles & renewals']].map((r, i) => `
+ <div class="card"><h4>${r[0]}</h4><p class="note" style="margin-bottom:12px">${r[1]}.</p>
+ <div id="rep${i}"><button class="btn btn-line btn-sm" onclick="genReport(${i})">Generate</button></div></div>`).join('')}</div>`;
+
+function genReport(i) {
+  const el = $('rep' + i); el.innerHTML = '<div class="spinner"></div><p class="note" style="text-align:center;margin-top:8px">Compiling from live data…</p>';
+  setTimeout(() => {
+    const t = totals();
+    el.innerHTML = `<div class="alert good"><span>✓</span><div>Report ready: revenue ${SAR(t.rev)}, net ${SAR(Math.round(t.net))}, food cost ${pct(t.foodPct)}, ${STATE.menu.filter(m => marginPct(m) < 20).length} items flagged for repricing.</div></div>
+    <button class="btn btn-sm btn-line" onclick="toast('PDF export is wired to the backend in production')">Download PDF</button>`;
+  }, 1300);
+}
+
+// ── Rent & Utilities ──────────────────────────────────────────
+function monthsBetween(a, b) {
+  if (!a || !b) return 0;
+  const [ay, am] = a.split('-').map(Number), [by, bm] = b.split('-').map(Number);
+  return (by - ay) * 12 + (bm - am);
+}
+PAGES.rentutil = () => {
+  const rt = STATE.rentTerm || (STATE.rentTerm = { months: 12, start: curMonth() });
+  const elapsed = Math.max(0, Math.min(rt.months, monthsBetween(rt.start, curMonth())));
+  const remaining = Math.max(0, rt.months - elapsed);
+  const total = STATE.rent * rt.months;
+  const e = STATE.elec || (STATE.elec = { included: true, amt: 0 });
+  const w = STATE.water || (STATE.water = { included: true, amt: 0 });
+  const utilCard = (key, label) => {
+    const u = STATE[key];
+    return `<div class="card"><h4>${label} <span class="tag ${u.included ? 'ok' : 'warn'}">${u.included ? 'in rent' : 'billed separately'}</span></h4>
+     <div class="field"><label>Is ${label.toLowerCase()} included in the rent?</label>
+      <select onchange="STATE.${key}.included=(this.value==='yes');render();toast('${label} setting updated — costs recalculated')">
+       <option value="yes" ${u.included ? 'selected' : ''}>Yes — included in rent</option>
+       <option value="no" ${!u.included ? 'selected' : ''}>No — separate monthly bill</option></select></div>
+     ${u.included
+       ? `<p class="note">${label} is part of the rent above, so it is not added again as a separate cost.</p>`
+       : `<div class="field"><label>${label} bill (SAR / month)</label><input type="number" min="0" value="${u.amt}" onchange="STATE.${key}.amt=Math.max(0,+this.value);render();toast('${label} bill updated — all dishes recosted')"></div>`}
+    </div>`;
+  };
+  return `<div class="grid g4">
+   ${kpi('Monthly rent', SAR(STATE.rent))}
+   ${kpi('Lease length', rt.months + ' mo', monthLabel(rt.start) + ' →')}
+   ${kpi('Total lease value', SAR(total), STATE.rent + ' × ' + rt.months)}
+   ${kpi('Remaining', remaining + ' mo', elapsed + ' mo elapsed', remaining <= 2 ? 'down' : '')}</div>
+  <div class="card" style="margin-top:13px"><h4>Rent contract <span class="note">rent can change — update it and every dish recosts</span></h4>
+   <div class="grid g3">
+    <div class="field"><label>Monthly rent (SAR)</label><input type="number" min="0" value="${STATE.rent}" onchange="STATE.rent=Math.max(0,+this.value);render();toast('Rent updated — all dishes recosted')"></div>
+    <div class="field"><label>Lease duration (months)</label><input type="number" min="1" value="${rt.months}" onchange="STATE.rentTerm.months=Math.max(1,+this.value||1);render()"></div>
+    <div class="field"><label>Lease start month</label><input type="month" value="${rt.start}" onchange="STATE.rentTerm.start=this.value||curMonth();render()"></div></div>
+   ${remaining <= 2 ? `<div class="alert warn"><span>◆</span><div>Lease ends in <b>${remaining} month(s)</b> (${monthLabel(nextMonthsFrom(rt.start, rt.months))}). Budget for renewal or a rent change.</div></div>` : ''}
+   <p class="note">Rent is allocated to each dish by revenue share. Changing the monthly figure updates margins everywhere instantly; the lease length & start are used for renewal alerts and total-commitment tracking.</p></div>
+  <div class="grid g2" style="margin-top:13px">${utilCard('elec', 'Electricity')}${utilCard('water', 'Water')}</div>
+  <div class="card" style="margin-top:13px"><h4>How this flows into costing</h4>
+   <p class="note">Electricity and water marked <b>“billed separately”</b> are added to the Utilities cost pool and spread across dishes by revenue share. Marked <b>“in rent”</b>, they contribute nothing extra — the rent already covers them — so nothing is double-counted.</p>
+   <div class="grid g3" style="margin-top:8px">
+    ${kpi('Electricity in costing', e.included ? 'SAR 0' : SAR(e.amt), e.included ? 'covered by rent' : 'per month')}
+    ${kpi('Water in costing', w.included ? 'SAR 0' : SAR(w.amt), w.included ? 'covered by rent' : 'per month')}
+    ${kpi('Utilities pool total', SAR(hiddenGroup('Utilities') + utilMonthly()), 'incl. gas & other')}</div></div>`;
+};
+function nextMonthsFrom(start, n) { let s = start; for (let i = 0; i < n; i++) s = nextMonth(s); return s; }
+
+// ── Extra Fees & Fines ────────────────────────────────────────
+PAGES.xfees = () => {
+  const em = STATE.evalMonth || (STATE.evalMonth = curMonth());
+  const list = STATE.xfees || (STATE.xfees = []);
+  const monthly = list.filter(f => f.type === 'monthly');
+  const oneNow = list.filter(f => f.type === 'onetime' && f.month === em);
+  const unpaid = oneNow.filter(f => !f.paid);
+  const isCur = em === curMonth();
+  return `<div class="grid g4">
+   ${kpi('Recurring / month', SAR(xfeesRecurring()), monthly.length + ' line(s)')}
+   ${kpi('One-time this month', SAR(xfeesOneTime()), oneNow.length + ' charge(s)')}
+   ${kpi('Total into costs', SAR(Math.round(xfeesMonthly())), 'this evaluation month')}
+   ${kpi('Unpaid one-time', unpaid.length, unpaid.length ? SAR(unpaid.reduce((a, f) => a + f.amt, 0)) + ' outstanding' : 'all settled', unpaid.length ? 'down' : 'up')}</div>
+  <div class="card" style="margin-top:13px"><h4>Evaluation month <span class="note">one-time fines only count in their own month</span></h4>
+   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-sm btn-line" onclick="changeEvalMonth(-1)">← ${monthLabel(prevMonth(em))}</button>
+    <b style="font-family:var(--mono);font-size:16px">${monthLabel(em)}${isCur ? ' · current' : ''}</b>
+    <button class="btn btn-sm btn-line" onclick="changeEvalMonth(1)">${monthLabel(nextMonth(em))} →</button>
+    <button class="btn btn-sm btn-navy" style="margin-inline-start:auto" onclick="closeMonth()">Close month & roll forward →</button></div>
+   <p class="note" style="margin-top:9px">A one-time fee (e.g. a municipality fine) is charged in the month you log it. Once you roll forward, it is automatically dropped from the next month's cost — paid or not it no longer inflates future margins.</p>
+   ${unpaid.length ? `<div class="alert warn"><span>◆</span><div><b>${unpaid.length} one-time fee(s) still marked unpaid</b> for ${monthLabel(em)} — settle them or they stay flagged when you roll the month forward.</div></div>` : ''}</div>
+  <div class="card" style="margin-top:13px"><h4>Fee lines</h4>
+   <table><tr><th>Fee</th><th>Type</th><th>Month</th><th class="num">SAR / mo</th><th>Paid</th><th></th></tr>
+   ${list.length ? list.map(f => `<tr>
+     <td><input class="tbl-edit" style="width:210px;text-align:start" value="${esc(f.n)}" onchange="xfeeField(${q(f.id)},'n',this.value)">${f.note ? `<div class="note">${esc(f.note)}</div>` : ''}</td>
+     <td><span class="tag ${f.type === 'monthly' ? 'info' : 'warn'}">${f.type === 'monthly' ? 'Recurring' : 'One-time'}</span></td>
+     <td class="note">${f.type === 'monthly' ? 'every month' : monthLabel(f.month)}</td>
+     <td class="num"><input class="tbl-edit" type="number" value="${f.amt}" onchange="xfeeField(${q(f.id)},'amt',Math.max(0,+this.value));render();toast('Extra fees updated — dishes recosted')"></td>
+     <td>${f.type === 'onetime' ? `<input type="checkbox" ${f.paid ? 'checked' : ''} onchange="xfeeField(${q(f.id)},'paid',this.checked)">` : '<span class="note">—</span>'}</td>
+     <td><button class="btn btn-sm btn-danger" onclick="delXfee(${q(f.id)})">✕</button></td></tr>`).join('')
+   : '<tr><td colspan="6" class="note">No extra fees yet — add one below or pick a common Saudi fee.</td></tr>'}</table>
+   <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
+    <input class="tbl-edit" id="xfN" style="width:230px;text-align:start" placeholder="e.g. Civil Defense violation fine">
+    <select class="tbl-edit" id="xfT" style="width:130px;text-align:start"><option value="monthly">Recurring</option><option value="onetime">One-time / fine</option></select>
+    <input class="tbl-edit" id="xfA" type="number" placeholder="SAR" style="width:100px">
+    <button class="btn btn-sm btn-navy" onclick="addXfee()">+ Add fee</button></div></div>
+  <div class="card" style="margin-top:13px"><h4>Common Saudi restaurant fees <span class="note">tap to add — typical amounts, fully editable</span></h4>
+   <div style="display:flex;gap:7px;flex-wrap:wrap">
+    ${XFEE_SUGGESTIONS.map((s, i) => `<button class="chip" onclick="addXfeeSuggestion(${i})">${esc(s[0])} <span class="note">· ${s[1] === 'onetime' ? 'fine' : '/mo'} · ~${fmt(s[2])}</span></button>`).join('')}</div>
+   <p class="note" style="margin-top:10px">Fine ranges from Saudi municipal regulations: hygiene SAR 200–4,000 · health certificate SAR 200–2,000 · staff hygiene SAR 400–2,000 · operating without a licence SAR 10,000–50,000. Amounts are starting points — set your actual figure.</p></div>`;
+};
+const prevMonth = ym => { let [y, m] = ym.split('-').map(Number); m--; if (m < 1) { m = 12; y--; } return `${y}-${String(m).padStart(2, '0')}`; };
+function xfeeField(id, k, v) { const f = STATE.xfees.find(x => x.id === id); if (!f) return; f[k] = v; if (k === 'paid') render(); }
+function changeEvalMonth(dir) { STATE.evalMonth = dir > 0 ? nextMonth(STATE.evalMonth) : prevMonth(STATE.evalMonth); render(); }
+function closeMonth() {
+  const em = STATE.evalMonth;
+  const unpaid = STATE.xfees.filter(f => f.type === 'onetime' && f.month === em && !f.paid);
+  STATE.evalMonth = nextMonth(em);
+  render();
+  toast(`Rolled forward to ${monthLabel(STATE.evalMonth)} — one-time charges from ${monthLabel(em)} dropped` + (unpaid.length ? ` (${unpaid.length} still unpaid)` : ''), unpaid.length ? 'bad' : 'good');
+}
+function addXfee() {
+  const n = $('xfN').value.trim(), type = $('xfT').value, amt = +$('xfA').value;
+  if (!n || !amt) { toast('Name and amount required', 'bad'); return; }
+  STATE.xfees.push({ id: uid(), n, amt, type, paid: false, month: type === 'onetime' ? STATE.evalMonth : null, note: '' });
+  render(); toast('Extra fee added — dishes recosted');
+}
+function addXfeeSuggestion(i) {
+  const s = XFEE_SUGGESTIONS[i];
+  STATE.xfees.push({ id: uid(), n: s[0], amt: s[2], type: s[1], paid: false, month: s[1] === 'onetime' ? STATE.evalMonth : null, note: '' });
+  render(); toast(`"${s[0]}" added — edit the amount to your actual figure`);
+}
+function delXfee(id) { STATE.xfees = STATE.xfees.filter(f => f.id !== id); render(); toast('Fee removed', 'bad'); }
+
+// ── Live Market Rates ─────────────────────────────────────────
+function marketIngredients() {
+  if (STATE.market && Array.isArray(STATE.market.ingredients)) return STATE.market.ingredients;
+  return MARKET_FALLBACK.ingredients.map(([key, lo, hi]) => ({ key, lo, hi }));
+}
+function marketBandFor(name) {
+  const lo = name.toLowerCase();
+  return marketIngredients().find(d => lo.includes(d.key)) || null;
+}
+PAGES.market = () => {
+  const mk = STATE.market;
+  const yourDel = blendedAppRate() * 100;
+  const benchRows = [
+    ['Delivery commission (blended)', pct(yourDel), `${MARKET_FALLBACK.delivery.lo}–${MARKET_FALLBACK.delivery.hi}%`, yourDel > MARKET_FALLBACK.delivery.hi ? 'down' : 'up'],
+    ['VAT (ZATCA)', '15%', '15%', ''],
+    ['Electricity tariff', STATE.elec && !STATE.elec.included ? SAR(STATE.elec.amt) + '/mo' : 'in rent', `${MARKET_FALLBACK.electricity.lo}–${MARKET_FALLBACK.electricity.hi} SAR/kWh`, ''],
+    ['Water tariff', STATE.water && !STATE.water.included ? SAR(STATE.water.amt) + '/mo' : 'in rent', `${MARKET_FALLBACK.water.lo}–${MARKET_FALLBACK.water.hi} SAR/m³`, ''],
+    ['F&B rent benchmark', SAR(STATE.rent) + '/mo', `${fmt(MARKET_FALLBACK.rentSqm.lo)}–${fmt(MARKET_FALLBACK.rentSqm.hi)} SAR/m²/yr`, ''],
+  ];
+  const ingRows = STATE.ings.map(i => ({ i, band: marketBandFor(i.n) })).filter(x => x.band);
+  return `<div class="card"><h4>Live Market Rates <span class="tag gold">Market Agent</span> ${mk ? `<span class="tag ${mk.source === 'live' ? 'ok' : 'warn'}">${mk.source === 'live' ? 'live' : 'offline est.'} · ${mk.at}</span>` : '<span class="tag info">not fetched yet</span>'}</h4>
+   <p class="note" style="margin-bottom:12px">Benchmarks current market fees & ingredient prices for a <b>${esc(STATE.org.type)}</b> in <b>${esc(STATE.org.city)}</b> against your numbers. ${mk ? '' : 'Click refresh to pull live rates.'}</p>
+   <button class="btn btn-navy btn-sm" id="mkBtn" onclick="refreshMarket()">⟳ Refresh live rates</button>
+   <div id="mkTerm" class="note" style="margin-top:10px">${mk ? esc(mk.note || '') : 'Uses live web data server-side; falls back to Saudi market estimates if offline.'}</div></div>
+  <div class="card" style="margin-top:13px"><h4>Fees & utilities benchmark</h4>
+   <table><tr><th>Item</th><th class="num">Your rate</th><th class="num">Market range</th><th></th></tr>
+   ${benchRows.map(r => `<tr><td>${r[0]}</td><td class="num ${r[3]}">${r[1]}</td><td class="num note">${r[2]}</td>
+    <td>${r[3] === 'down' ? '<span class="tag bad">above market</span>' : r[3] === 'up' ? '<span class="tag ok">competitive</span>' : ''}</td></tr>`).join('')}</table>
+   <p class="note" style="margin-top:9px">Delivery commission is the biggest controllable fee — anything above ${MARKET_FALLBACK.delivery.hi}% blended is worth renegotiating or steering to direct orders.</p></div>
+  <div class="card" style="margin-top:13px"><h4>Ingredient price benchmark <span class="note">${ingRows.length} of your ingredients matched to market categories</span></h4>
+   ${ingRows.length ? `<table><tr><th>Ingredient</th><th class="num">Your price</th><th class="num">Market /kg</th><th>Status</th><th></th></tr>
+   ${ingRows.map(({ i, band }) => {
+     const mid = (band.lo + band.hi) / 2, over = i.price > band.hi, under = i.price < band.lo;
+     return `<tr><td>${esc(i.n)}</td><td class="num ${over ? 'down' : 'up'}">${SAR2(i.price)}</td>
+      <td class="num note">${band.lo}–${band.hi}</td>
+      <td><span class="tag ${over ? 'bad' : under ? 'info' : 'ok'}">${over ? 'above market' : under ? 'below range' : 'in range'}</span></td>
+      <td>${over ? `<button class="btn btn-sm btn-line" onclick="updIngPrice(${q(i.id)},${mid.toFixed(2)})">Set to market ${SAR2(mid)}</button>` : ''}</td></tr>`;
+   }).join('')}</table>` : '<p class="note">No ingredients matched the market categories yet. Import or add ingredients (fish, chicken, rice, dairy…) to see benchmarks.</p>'}</div>`;
+};
+async function refreshMarket() {
+  const btn = $('mkBtn'), term = $('mkTerm');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Fetching live rates…'; }
+  try {
+    const res = await fetch('/api/market-rates', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ org: STATE.org, ingredients: STATE.ings.slice(0, 30).map(i => i.n), rent: STATE.rent, blendedDelivery: blendedAppRate() * 100 }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Market service error');
+    STATE.market = { source: 'live', at: new Date().toLocaleDateString('en-US'), note: data.note || 'Live market rates retrieved.', ingredients: data.ingredients || marketIngredients() };
+    toast('Live market rates updated');
+  } catch (err) {
+    STATE.market = { source: 'offline', at: new Date().toLocaleDateString('en-US'), note: MARKET_FALLBACK.note + ' (' + err.message + ')', ingredients: marketIngredients() };
+    toast('Live service unavailable — showing Saudi market estimates', 'bad');
+  }
+  render();
+}
+
+// ── Ingredient Excel export / import ──────────────────────────
+function exportIngredientsExcel() {
+  const rows = STATE.ings.map(i => ({ Name: i.n, Supplier: i.sup, Unit: i.unit, 'Price (SAR)': i.price, 'Yield %': Math.round((i.yield || 1) * 100) }));
+  const fname = (STATE.org.name || 'ingredients').replace(/[^a-z0-9]+/gi, '_').toLowerCase();
+  if (window.XLSX) {
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ingredients');
+    XLSX.writeFile(wb, fname + '_ingredients.xlsx');
+    toast('Exported ' + rows.length + ' ingredients to Excel');
+    return;
+  }
+  // CSV fallback (opens in Excel) with UTF-8 BOM
+  const head = ['Name', 'Supplier', 'Unit', 'Price (SAR)', 'Yield %'];
+  const csvEsc = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const csv = '﻿' + [head.join(','), ...rows.map(r => head.map(h => csvEsc(r[h])).join(','))].join('\n');
+  downloadBlob(csv, fname + '_ingredients.csv', 'text/csv;charset=utf-8');
+  toast('Exported ' + rows.length + ' ingredients (CSV)');
+}
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function parseCSV(text) {
+  const rows = []; let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"' && text[i + 1] === '"') { cur += '"'; i++; }
+      else if (c === '"') inQ = false;
+      else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ''));
+}
+function rowsToObjects(rows) {
+  if (!rows.length) return [];
+  const norm = s => String(s).toLowerCase().replace(/[^a-z%]/g, '');
+  const header = rows[0].map(norm);
+  const find = (...keys) => header.findIndex(h => keys.some(k => h.includes(k)));
+  const ci = { n: find('name', 'ingredient', 'item'), sup: find('supplier', 'vendor'), unit: find('unit'), price: find('price', 'cost', 'sar'), yld: find('yield') };
+  if (ci.n === -1 || ci.price === -1) { ci.n = 0; ci.price = rows[0].length - 1; } // assume name + price columns
+  return rows.slice(1).map(r => ({
+    n: (r[ci.n] || '').trim(),
+    sup: ci.sup > -1 ? (r[ci.sup] || '').trim() : '',
+    unit: ci.unit > -1 ? (r[ci.unit] || '').trim().toLowerCase() : '',
+    price: parseFloat(String(r[ci.price] || '').replace(/[^\d.]/g, '')),
+    yield: ci.yld > -1 ? parseFloat(String(r[ci.yld]).replace(/[^\d.]/g, '')) : NaN,
+  })).filter(o => o.n && o.price > 0);
+}
+function applyIngredientRows(rows) {
+  let added = 0, updated = 0; const recosted = new Set();
+  rows.forEach(o => {
+    const unit = ['kg', 'pc', 'l', 'g', 'box', 'crate'].includes(o.unit) ? (o.unit === 'l' ? 'L' : o.unit) : null;
+    const yld = o.yield > 1 ? o.yield / 100 : (o.yield > 0 && o.yield <= 1 ? o.yield : null);
+    let ig = STATE.ings.find(x => x.n.toLowerCase() === o.n.toLowerCase());
+    if (ig) {
+      const old = ig.price;
+      if (o.price && o.price !== old) { ig.price = o.price; ig.est = false; ig.hist = ig.hist || []; ig.hist.push({ d: 'xls', p: o.price }); if (ig.hist.length > 8) ig.hist.shift(); updated++; STATE.menu.forEach(m => { if (m.recipe.some(r => r[0] === ig.id)) recosted.add(m.n); }); }
+      if (o.sup) ig.sup = o.sup;
+      if (unit) ig.unit = unit;
+      if (yld) ig.yield = yld;
+    } else {
+      STATE.ings.push({ id: uid(), n: o.n, sup: o.sup || (STATE.sups[0] ? STATE.sups[0].n : 'Unassigned'), unit: unit || 'kg', price: o.price, yield: yld || 1, est: false, hist: [{ d: 'xls', p: o.price }] });
+      added++;
+    }
+  });
+  render();
+  toast(`Import done — ${added} added, ${updated} price(s) updated` + (recosted.size ? `, ${recosted.size} recipe(s) recosted` : ''));
+}
+function importIngredientsFile(input) {
+  const file = input.files && input.files[0]; if (!file) return;
+  const isXlsx = /\.xlsx?$/i.test(file.name);
+  if (isXlsx && window.XLSX) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const arr = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+        const objs = rowsToObjects(arr.map(r => r.map(c => c == null ? '' : c)));
+        if (!objs.length) { toast('No "name + price" rows found in the sheet', 'bad'); return; }
+        applyIngredientRows(objs);
+      } catch (err) { toast('Could not read Excel file: ' + err.message, 'bad'); }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const objs = rowsToObjects(parseCSV(String(e.target.result)));
+      if (!objs.length) { toast('No "name + price" rows found', 'bad'); return; }
+      applyIngredientRows(objs);
+    };
+    reader.readAsText(file);
+  }
+  input.value = '';
+}
+function ingredientImportModal() {
+  modal(`<h3>Import ingredients</h3>
+   <div class="field"><label>Paste rows — one per line as <b>name, price, unit</b> (or tab/space separated)</label>
+    <textarea id="igPaste" rows="6" placeholder="Hamour fish, 62, kg&#10;Shrimp peeled 58 kg&#10;Rice, 7.5"></textarea></div>
+   <button class="btn btn-navy btn-sm" onclick="importIngredientsPaste()">Import pasted rows</button>
+   <div class="or">or pull from a supplier price-list URL</div>
+   <div class="field"><label>Supplier price-list / website URL</label><input id="igUrl" placeholder="https://supplier.sa/pricelist"></div>
+   <div class="term" id="igTerm" style="height:90px;margin-bottom:14px">› Idle.</div>
+   <div style="display:flex;gap:9px;justify-content:flex-end">
+    <button class="btn btn-line" onclick="closeModal()">Close</button>
+    <button class="btn btn-gold" onclick="importIngredientsUrl()">▶ Extract from URL</button></div>`);
+}
+function parseIngredientText(text) {
+  return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    const parts = l.split(/[,;\t]+/).map(s => s.trim());
+    if (parts.length >= 2 && /\d/.test(parts[1])) {
+      return { n: parts[0], price: parseFloat(parts[1].replace(/[^\d.]/g, '')), unit: (parts[2] || '').toLowerCase(), sup: '', yield: NaN };
+    }
+    const m = l.match(/^(.+?)\s+(\d+(?:\.\d+)?)\s*(kg|pc|l|g|box|crate)?$/i);
+    if (m) return { n: m[1].trim(), price: parseFloat(m[2]), unit: (m[3] || '').toLowerCase(), sup: '', yield: NaN };
+    return null;
+  }).filter(o => o && o.n && o.price > 0);
+}
+function importIngredientsPaste() {
+  const txt = ($('igPaste') && $('igPaste').value) || '';
+  const objs = parseIngredientText(txt);
+  if (!objs.length) { toast('No "name + price" rows detected', 'bad'); return; }
+  closeModal(); applyIngredientRows(objs);
+}
+async function importIngredientsUrl() {
+  const url = ($('igUrl') && $('igUrl').value.trim()) || '';
+  const term = $('igTerm');
+  if (!url.startsWith('http')) { toast('Enter a valid URL', 'bad'); return; }
+  if (term) term.innerHTML = `› Fetching <b>${esc(url)}</b> server-side…`;
+  try {
+    const res = await fetch('/api/fetch-prices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Extraction failed');
+    const objs = (data.items || []).map(it => ({ n: it.name, price: it.price, unit: (it.unit || '').toLowerCase(), sup: it.supplier || '', yield: NaN })).filter(o => o.n && o.price > 0);
+    if (!objs.length) { if (term) term.innerHTML = '<span style="color:#FF9B8E">✗ No priced ingredients found on that page.</span>'; return; }
+    if (term) term.innerHTML = `<span class="g">✓</span> ${objs.length} ingredient(s) found — importing…`;
+    closeModal(); applyIngredientRows(objs);
+  } catch (err) {
+    if (term) term.innerHTML = `<span style="color:#FF9B8E">✗ ${esc(err.message)}</span><br>Tip: paste the price list text instead.`;
+    toast('URL extraction failed: ' + err.message, 'bad');
+  }
+}

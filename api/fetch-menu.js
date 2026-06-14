@@ -43,26 +43,41 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Valid URL required' });
   }
 
-  // 1. Fetch the page server-side (bypasses browser CORS)
+  // 1. Fetch the page — Tavily first (handles JS SPAs), plain fetch fallback
   let rawText = '';
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12000);
+    if (process.env.TAVILY_API_KEY) {
+      const tvRes = await fetch('https://api.tavily.com/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: process.env.TAVILY_API_KEY, urls: [url], format: 'text' }),
+      });
+      if (tvRes.ok) {
+        const tvData = await tvRes.json();
+        const content = tvData.results?.[0]?.raw_content || tvData.results?.[0]?.content || '';
+        if (content.length > 50) {
+          rawText = content.slice(0, 10000);
+        }
+      }
+    }
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'ar,en;q=0.9',
-      },
-    });
-    clearTimeout(timeout);
-
-    if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}`);
-
-    const html = await response.text();
-    rawText = stripHtml(html).slice(0, 10000); // cap at ~3k tokens
+    // Fallback: plain fetch + HTML strip (for static sites or if Tavily key missing)
+    if (!rawText) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'ar,en;q=0.9',
+        },
+      });
+      clearTimeout(timeout);
+      if (!response.ok) throw new Error(`HTTP ${response.status} from ${url}`);
+      const html = await response.text();
+      rawText = stripHtml(html).slice(0, 10000);
+    }
   } catch (err) {
     return res.status(502).json({ error: `Could not fetch URL: ${err.message}` });
   }

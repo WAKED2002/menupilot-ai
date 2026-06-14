@@ -11,6 +11,9 @@
 <!-- Supabase JS — CDN -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- SheetJS — Excel (.xlsx) ingredient import/export (CSV fallback if this fails to load) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <!-- Inject Supabase credentials (replaced at build/deploy time via Vercel env) -->
 <script>
   window.SUPABASE_URL  = '__SUPABASE_URL__';

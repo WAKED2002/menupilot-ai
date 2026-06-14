@@ -35,6 +35,7 @@ function enterDemo() {
 }
 
 function render() {
+  migrate(STATE);
   const r = STATE.route;
   let html = '';
   if (PUBLIC.includes(r)) html = PUB[r]();
@@ -162,8 +163,8 @@ async function doSignup() {
 const NAV = [
   ['overview', [['dash', '▦'], ['branch', '◫'], ['copilot', '✧']]],
   ['menuG', [['menu', '☰'], ['cats', '▤'], ['recipe', '⚗'], ['ing', '⬡'], ['sup', '⛟'], ['proc', '⇄'], ['inv', '▥']]],
-  ['costsG', [['emp', '⬢'], ['gov', '⌂'], ['hidden', '◌'], ['mktg', '◎'], ['apps', '➤'], ['alloc', '⊞']]],
-  ['intelG', [['costing', '⬡'], ['pricing', '◈'], ['eng', '◧'], ['scen', '∿'], ['profit', '◍'], ['reports', '▣']]],
+  ['costsG', [['emp', '⬢'], ['gov', '⌂'], ['rentutil', '⌖'], ['hidden', '◌'], ['xfees', '⊘'], ['mktg', '◎'], ['apps', '➤'], ['alloc', '⊞']]],
+  ['intelG', [['costing', '⬡'], ['pricing', '◈'], ['market', '◭'], ['eng', '◧'], ['scen', '∿'], ['profit', '◍'], ['reports', '▣']]],
   ['adminG', [['settings', '⚙'], ['usersP', '⊟'], ['billing', '▦']]],
 ];
 let pops = { notif: false, user: false };

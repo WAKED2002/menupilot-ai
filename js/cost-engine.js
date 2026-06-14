@@ -35,6 +35,23 @@ function govMonthly() {
 const hiddenGroup   = grp => STATE.hidden.filter(h => h.grp === grp).reduce((a, h) => a + h.amt, 0);
 const hiddenMonthly = () => STATE.hidden.reduce((a, h) => a + h.amt, 0);
 
+// Electricity & water that are NOT included in the rent — billed out of pocket.
+const utilMonthly = () =>
+  ((STATE.elec && !STATE.elec.included) ? (STATE.elec.amt || 0) : 0) +
+  ((STATE.water && !STATE.water.included) ? (STATE.water.amt || 0) : 0);
+
+// Extra fees: recurring monthly lines always count; a one-time fee/fine only
+// counts in the evaluation month it is logged against, then drops off.
+function xfeesMonthly() {
+  return (STATE.xfees || []).reduce((a, f) => {
+    if (f.type === 'monthly') return a + (f.amt || 0);
+    if (f.month === STATE.evalMonth) return a + (f.amt || 0); // one-time, current month only
+    return a;
+  }, 0);
+}
+const xfeesRecurring = () => (STATE.xfees || []).filter(f => f.type === 'monthly').reduce((a, f) => a + (f.amt || 0), 0);
+const xfeesOneTime   = () => (STATE.xfees || []).filter(f => f.type === 'onetime' && f.month === STATE.evalMonth).reduce((a, f) => a + (f.amt || 0), 0);
+
 function blendedAppRate() {
   const tot = STATE.apps.reduce((a, x) => a + x.share, 0) || 1;
   return STATE.apps.reduce((a, x) => a + (x.comm + x.mkt) / 100 * x.share, 0) / tot;
@@ -48,13 +65,14 @@ function layers(m) {
     ing,
     labor:  m.laborMin * laborRate(),
     pack:   m.pack,
-    util:   hiddenGroup('Utilities') * w,
+    util:   (hiddenGroup('Utilities') + utilMonthly()) * w,
     rent:   STATE.rent * w,
     gov:    govMonthly() * w,
     tech:   hiddenGroup('Technology') * w,
     mkt:    hiddenGroup('Marketing') * w,
     del:    m.delShare * blendedAppRate() * m.price,
     hid:    (hiddenGroup('Operations') + hiddenGroup('Finance')) * w,
+    xfee:   xfeesMonthly() * w,
     waste:  ing * (STATE.wastePct ?? 4) / 100 + hiddenGroup('Shrinkage') * w,
   };
 }
@@ -70,6 +88,7 @@ function totals() {
   const profit = STATE.menu.reduce((a, m) => a + margin(m) * m.sold, 0);
   return {
     rev, ingT, labor: laborPool(), gov: govMonthly(), hidden: hiddenMonthly(), rent: STATE.rent,
+    util: utilMonthly(), xfee: xfeesMonthly(),
     gross: rev - ingT, net: profit,
     foodPct:  ingT / rev * 100,
     laborPct: laborPool() / rev * 100,
@@ -86,7 +105,7 @@ function breakEven() {
     return a + (L.ing + L.pack + L.del + L.waste) * m.sold;
   }, 0);
   const cmr = 1 - variable / t.rev;
-  const fixed = t.labor + t.gov + t.hidden + t.rent;
+  const fixed = t.labor + t.gov + t.hidden + t.rent + utilMonthly() + xfeesMonthly();
   return { cmr, fixed, rev: fixed / cmr };
 }
 

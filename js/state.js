@@ -19,14 +19,48 @@ function blankState() {
     cats: [], ings: [], menu: [], sups: [], emps: [], gov: [], hidden: [], apps: [],
     users: [],
     rent: 28000,
+    rentTerm: { months: 12, start: curMonth() },
+    elec: { included: true, amt: 0 },
+    water: { included: true, amt: 0 },
+    xfees: [],
+    evalMonth: curMonth(),
     wastePct: 4,
     budget: { food: 32, labor: 20, mkt: 5 },
     lastInv: null,
     notifications: [],
     invoices: [],
+    market: null,
     ob: { step: 1, src: 'paste', extracted: false },
     pendingSignup: null,
   };
+}
+
+// Ensures older / DB-loaded states carry the new rent-term, utility, extra-fee
+// and eval-month fields, and pulls any legacy Electricity/Water lines out of
+// Hidden Costs into the dedicated utilities model so they are never double-counted.
+function migrate(s) {
+  if (!s || s._migrated) return s;
+  if (!s.rentTerm) s.rentTerm = { months: 12, start: curMonth() };
+  if (!s.xfees) s.xfees = [];
+  if (!s.evalMonth) s.evalMonth = curMonth();
+  if (!('market' in s)) s.market = null;
+  // Absorb any legacy Electricity/Water lines from Hidden Costs into the
+  // dedicated utilities model (so they appear on the Rent & Utilities page and
+  // are never counted twice). Only absorb when the field is still untouched.
+  const absorb = (key, name) => {
+    const u = s[key];
+    const idx = (s.hidden || []).findIndex(h => h.grp === 'Utilities' && new RegExp(name, 'i').test(h.n));
+    if (idx === -1) { if (!u) s[key] = { included: true, amt: 0 }; return; }
+    if (!u || (u.included && !u.amt)) {       // not yet configured by the user
+      const amt = s.hidden[idx].amt;
+      s.hidden.splice(idx, 1);
+      s[key] = { included: false, amt };      // it was a real out-of-pocket bill
+    }
+  };
+  absorb('elec', 'electric');
+  absorb('water', 'water');
+  s._migrated = true;
+  return s;
 }
 
 function defaultGov() {
@@ -57,7 +91,7 @@ function defaultGov() {
 function defaultHidden() {
   return [
     ['Cleaning supplies','Operations',1400],['Uniforms','Operations',450],['Pest control','Operations',600],
-    ['Waste disposal','Operations',500],['Water','Utilities',1900],['Electricity','Utilities',6200],['Gas','Utilities',1700],
+    ['Waste disposal','Operations',500],['Gas','Utilities',1700],
     ['POS subscription','Technology',850],['Internet','Technology',420],['Accounting software','Technology',380],['HR software','Technology',300],
     ['Photography','Marketing',900],['Social media & influencers','Marketing',2600],['Marketing agency retainer','Marketing',3500],['Paid ads (Snap/TikTok/Instagram)','Marketing',1800],['Printing','Marketing',350],
     ['Bank charges','Finance',300],['Payment gateway fees','Finance',1150],
@@ -122,6 +156,16 @@ function seedDemo() {
   ];
   s.gov = defaultGov();
   s.hidden = defaultHidden();
+  s.rent = 28000;
+  s.rentTerm = { months: 36, start: '2025-01' };
+  s.elec  = { included: false, amt: 6200 };
+  s.water = { included: false, amt: 1900 };
+  s.evalMonth = curMonth();
+  s.xfees = [
+    { id: uid(), n: 'Pest control contract', amt: 600, type: 'monthly', paid: true, month: null, note: '' },
+    { id: uid(), n: 'Grease trap cleaning', amt: 350, type: 'monthly', paid: true, month: null, note: '' },
+    { id: uid(), n: 'Municipality hygiene fine', amt: 2000, type: 'onetime', paid: false, month: curMonth(), note: 'Inspection — toilets flagged' },
+  ];
   s.apps = [
     { n: 'HungerStation', comm: 25, mkt: 5, share: 38 }, { n: 'Jahez', comm: 22, mkt: 3, share: 31 },
     { n: 'ToYou', comm: 20, mkt: 2, share: 14 }, { n: 'The Chefz', comm: 23, mkt: 3, share: 9 }, { n: 'Mrsool', comm: 18, mkt: 2, share: 8 },

@@ -59,15 +59,19 @@ Rules:
       return `You are the Recipe Intelligence Agent for a ${ctx.restaurantType || 'restaurant'} in Saudi Arabia.
 Given a menu item name (and optional description), return ONLY a JSON array of ingredients with Saudi market quantities.
 
-Format: [["ingredient name", quantity_in_grams_or_ml_or_pieces], ...]
+Format: [["ingredient name", quantity_as_number, "unit"], ...]
+Units MUST be one of: "g" (grams/weight), "ml" (liquids), "pc" (whole pieces like eggs, bread rolls, lemon halves)
 
 Rules:
-- Realistic Saudi market quantities. Proteins 150–350g, sauces 20–60g, sides 100–250g.
-- Use per-piece (integer) for items sold by piece (eggs, bread rolls, oysters).
+- Realistic Saudi market quantities. Proteins 150–350g, sauces 20–60g, seasonings/spices 3–15g, sides 100–250g.
+- Spices, salt, pepper, oil etc. are ALWAYS "g" or "ml" — never "pc".
+- Use "pc" ONLY for items literally counted as whole pieces: eggs, bread rolls, lemon halves, whole chilies.
 - Ingredient names in English, common Saudi/GCC market names.
 - 4–8 ingredients total. No duplicates.
 - Return ONLY the JSON array. No explanation, no markdown, no extra text.
-- Typical SAR prices per kg for context: beef 80–200, chicken 25–45, fish 40–120, shrimp 50–80, rice 7–12, vegetables 6–15, dairy 18–35.`;
+- Typical SAR prices per kg for context: beef 80–200, chicken 25–45, fish 40–120, shrimp 50–80, rice 7–12, vegetables 6–15, dairy 18–35.
+
+Example: [["chicken breast", 280, "g"], ["olive oil", 30, "ml"], ["lemon", 1, "pc"], ["salt", 5, "g"], ["black pepper", 3, "g"]]`;
     }
 
     case 'procurement': {

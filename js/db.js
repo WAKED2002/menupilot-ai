@@ -369,6 +369,11 @@ const DB = {
         branches: branches.map(b => b.name),
       },
       rent: org.rent,
+      rentTerm: org.rent_term || { months: 12, start: curMonth() },
+      elec: org.elec || { included: true, amt: 0 },
+      water: org.water || { included: true, amt: 0 },
+      evalMonth: org.eval_month || curMonth(),
+      xfees: org.extra_fees || [],
       wastePct: org.waste_pct,
       plan: org.plan,
       cats,
@@ -389,6 +394,11 @@ const DB = {
   async saveOrgState(orgId, state) {
     await DB.updateOrg(orgId, {
       rent: state.rent,
+      rent_term: state.rentTerm || { months: 12 },
+      elec: state.elec || { included: true, amt: 0 },
+      water: state.water || { included: true, amt: 0 },
+      eval_month: state.evalMonth || curMonth(),
+      extra_fees: state.xfees || [],
       waste_pct: state.wastePct,
       plan: state.plan,
       name: state.org.name,

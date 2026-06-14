@@ -294,6 +294,17 @@ create policy "Owner access invoices" on billing_invoices
   );
 
 -- ═══════════════════════════════════════════════════
+-- PHASE 3b — 2026-06 additions: rent term, utilities, extra fees
+-- Safe to run on an existing database (idempotent).
+-- ═══════════════════════════════════════════════════
+
+alter table organizations add column if not exists rent_term  jsonb default '{"months":12}'::jsonb;
+alter table organizations add column if not exists elec       jsonb default '{"included":true,"amt":0}'::jsonb;
+alter table organizations add column if not exists water      jsonb default '{"included":true,"amt":0}'::jsonb;
+alter table organizations add column if not exists eval_month text;
+alter table organizations add column if not exists extra_fees jsonb default '[]'::jsonb;
+
+-- ═══════════════════════════════════════════════════
 -- PHASE 4 — VIEWS
 -- ═══════════════════════════════════════════════════
 
