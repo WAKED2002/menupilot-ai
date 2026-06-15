@@ -61,41 +61,41 @@ PUB.landing = () => `<div class="pub">${pubNav()}
 
 PUB.features = () => `<div class="pub">${pubNav()}
  <div class="pub-section" style="flex:1"><div class="inner">
-  <h2>Eight agents. One P&L brain.</h2>
-  <p class="sub2">Each agent is now powered by Claude AI — not a label, not a demo. Open an account to use every one of them on your real data.</p>
+  <h2>${L('Eight agents. One P&L brain.', 'ثمانية وكلاء. عقل واحد لقائمة الدخل.')}</h2>
+  <p class="sub2">${L('Each agent is now powered by Claude AI — not a label, not a demo. Open an account to use every one of them on your real data.', 'كل وكيل مدعوم الآن بـ Claude — ليس مجرد اسم ولا عرض. أنشئ حساباً لاستخدامهم جميعاً على بياناتك الحقيقية.')}</p>
   <div class="grid g2">
-  ${[['Menu Extraction Agent','Reads your pasted menu text, extracts every item','Categories, items, prices, descriptions — saved into your Menu dashboard instantly.'],
-     ['Recipe Intelligence Agent','Predicts ingredients from item name & cuisine using Claude','Suggested ingredients, quantities, yield % — you approve, edit, or reject.'],
-     ['Cost Analyst Agent','Computes true cost per item, live','11 layers: materials, labor, packaging, utilities, rent, government, delivery, marketing, hidden, waste.'],
-     ['Pricing Strategist Agent','Recommends prices with risk levels + Claude rationale','Cost-plus, markup, competitor, value, delivery-app, combo, premium, psychological, seasonal, branch-specific.'],
-     ['Procurement Analyst Agent','Invoice capture + supplier price tracking','Paste invoice lines → Claude parses them → prices update → every recipe recosts.'],
-     ['Profitability Analyst Agent','Menu engineering on autopilot','Stars, Puzzles, Plow Horses, Dogs — with promote / reprice / redesign / remove actions.'],
-     ['Saudi Compliance Cost Agent','Every government & compliance fee, editable','Balady, ZATCA, Qiwa, Mudad, Muqeem, GOSI, iqama, visas, Saudization, SFDA — allocated per dish.'],
-     ['Restaurant CFO Agent','Real Claude AI in chat — your actual numbers','Losing items, break-even point, +10% profit plans, supplier and delivery-app verdicts. Powered by Claude.']].map((a, i) => `
-   <div class="card"><h4>${a[0]} <span class="tag gold">Agent ${'ABCDEFGH'[i]}</span></h4>
+  ${[[L('Menu Extraction Agent','وكيل استخراج القائمة'),L('Reads your pasted menu text, extracts every item','يقرأ نص قائمتك الملصق، ويستخرج كل صنف'),L('Categories, items, prices, descriptions — saved into your Menu dashboard instantly.','التصنيفات والأصناف والأسعار والأوصاف — تُحفظ في لوحة قائمتك فوراً.')],
+     [L('Recipe Intelligence Agent','وكيل ذكاء الوصفات'),L('Predicts ingredients from item name & cuisine using Claude','يتوقّع المكونات من اسم الصنف والمطبخ باستخدام Claude'),L('Suggested ingredients, quantities, yield % — you approve, edit, or reject.','مكونات وكميات ونسبة إنتاجية مقترحة — تعتمدها أو تعدّلها أو ترفضها.')],
+     [L('Cost Analyst Agent','وكيل تحليل التكلفة'),L('Computes true cost per item, live','يحسب التكلفة الحقيقية لكل صنف مباشرة'),L('11 layers: materials, labor, packaging, utilities, rent, government, delivery, marketing, hidden, waste.','11 طبقة: المواد، العمالة، التغليف، المرافق، الإيجار، الحكومية، التوصيل، التسويق، الخفية، الهدر.')],
+     [L('Pricing Strategist Agent','وكيل استراتيجية التسعير'),L('Recommends prices with risk levels + Claude rationale','يوصي بأسعار مع مستويات مخاطرة وتفسير من Claude'),L('Cost-plus, markup, competitor, value, delivery-app, combo, premium, psychological, seasonal, branch-specific.','التكلفة زائد، الترميز، المنافسين، القيمة، تطبيقات التوصيل، الكومبو، المميّز، النفسي، الموسمي، الخاص بالفرع.')],
+     [L('Procurement Analyst Agent','وكيل تحليل المشتريات'),L('Invoice capture + supplier price tracking','التقاط الفواتير وتتبّع أسعار الموردين'),L('Paste invoice lines → Claude parses them → prices update → every recipe recosts.','الصق سطور الفاتورة ← يحللها Claude ← تتحدث الأسعار ← تُعاد تكلفة كل وصفة.')],
+     [L('Profitability Analyst Agent','وكيل تحليل الربحية'),L('Menu engineering on autopilot','هندسة القائمة تلقائياً'),L('Stars, Puzzles, Plow Horses, Dogs — with promote / reprice / redesign / remove actions.','نجوم، ألغاز، خيول جرّارة، كلاب — مع إجراءات ترويج / إعادة تسعير / إعادة تصميم / حذف.')],
+     [L('Saudi Compliance Cost Agent','وكيل تكاليف الامتثال السعودي'),L('Every government & compliance fee, editable','كل رسم حكومي وامتثال، قابل للتعديل'),L('Balady, ZATCA, Qiwa, Mudad, Muqeem, GOSI, iqama, visas, Saudization, SFDA — allocated per dish.','بلدي، زاتكا، قوى، مدد، مقيم، التأمينات، الإقامة، التأشيرات، السعودة، الغذاء والدواء — موزعة على كل صنف.')],
+     [L('Restaurant CFO Agent','وكيل المدير المالي للمطعم'),L('Real Claude AI in chat — your actual numbers','ذكاء Claude حقيقي في المحادثة — أرقامك الفعلية'),L('Losing items, break-even point, +10% profit plans, supplier and delivery-app verdicts. Powered by Claude.','الأصناف الخاسرة، نقطة التعادل، خطط ربح +10%، أحكام الموردين وتطبيقات التوصيل. مدعوم بـ Claude.')]].map((a, i) => `
+   <div class="card"><h4>${a[0]} <span class="tag gold">${L('Agent ', 'الوكيل ')}${'ABCDEFGH'[i]}</span></h4>
    <p style="font-size:13px;margin-bottom:8px">${a[1]}.</p><p class="note">${a[2]}</p></div>`).join('')}
   </div>
-  <div style="margin-top:26px"><button class="btn btn-gold" onclick="enterDemo()">Use the agents in the live demo →</button></div>
+  <div style="margin-top:26px"><button class="btn btn-gold" onclick="enterDemo()">${L('Use the agents in the live demo →', 'استخدم الوكلاء في العرض المباشر ←')}</button></div>
  </div></div>${pubFoot()}</div>`;
 
 PUB.pricingPub = () => `<div class="pub">${pubNav()}
  <div class="pub-section" style="flex:1"><div class="inner">
-  <h2>Simple pricing in SAR.</h2><p class="sub2">Start free for 14 days on any plan. Cancel anytime.</p>
+  <h2>${L('Simple pricing in SAR.', 'تسعير بسيط بالريال.')}</h2><p class="sub2">${L('Start free for 14 days on any plan. Cancel anytime.', 'ابدأ مجاناً 14 يوماً على أي باقة. ألغِ في أي وقت.')}</p>
   <div class="grid g3">
-   ${[['Starter',299,'1 branch',['1 branch','Menu costing & recipes','Menu engineering','Saudi government fee database','Email support'],false],
-      ['Growth',599,'Up to 3 branches',['Everything in Starter','All 8 AI agents (Claude-powered)','Scenario simulator & break-even','Delivery app profitability','Procurement price alerts','Priority support'],true],
-      ['Enterprise',0,'Multi-brand groups',['Unlimited branches & brands','Custom cost models','API & POS integrations','Dedicated success manager','SLA & onboarding team'],false]].map(p => `
-   <div class="card plan ${p[4] ? 'feat' : ''}"><div class="pname">${p[0]} ${p[4] ? '<span class="tag gold">Most popular</span>' : ''}</div>
-    <div class="pprice">${p[1] ? 'SAR ' + p[1] : 'Custom'} ${p[1] ? '<span>/ month / brand</span>' : ''}</div>
+   ${[['Starter',299,L('1 branch','فرع واحد'),[L('1 branch','فرع واحد'),L('Menu costing & recipes','تكلفة القائمة والوصفات'),L('Menu engineering','هندسة القائمة'),L('Saudi government fee database','قاعدة الرسوم الحكومية السعودية'),L('Email support','دعم بالبريد')],false],
+      ['Growth',599,L('Up to 3 branches','حتى 3 فروع'),[L('Everything in Starter','كل ما في Starter'),L('All 8 AI agents (Claude-powered)','كل الوكلاء الـ8 (مدعومون بـ Claude)'),L('Scenario simulator & break-even','محاكي السيناريوهات ونقطة التعادل'),L('Delivery app profitability','ربحية تطبيقات التوصيل'),L('Procurement price alerts','تنبيهات أسعار المشتريات'),L('Priority support','دعم ذو أولوية')],true],
+      ['Enterprise',0,L('Multi-brand groups','مجموعات متعددة العلامات'),[L('Unlimited branches & brands','فروع وعلامات غير محدودة'),L('Custom cost models','نماذج تكلفة مخصصة'),L('API & POS integrations','تكاملات API ونقاط البيع'),L('Dedicated success manager','مدير نجاح مخصص'),L('SLA & onboarding team','اتفاقية مستوى خدمة وفريق إعداد')],false]].map(p => `
+   <div class="card plan ${p[4] ? 'feat' : ''}"><div class="pname">${p[0]} ${p[4] ? `<span class="tag gold">${L('Most popular', 'الأكثر شيوعاً')}</span>` : ''}</div>
+    <div class="pprice">${p[1] ? L('SAR ' + p[1], p[1] + ' ر.س') : L('Custom', 'مخصص')} ${p[1] ? `<span>${L('/ month / brand', '/ شهر / علامة')}</span>` : ''}</div>
     <div class="note">${p[2]}</div><ul>${p[3].map(x => `<li>${x}</li>`).join('')}</ul>
-    <button class="btn ${p[4] ? 'btn-gold' : 'btn-line'}" onclick="STATE.plan='${p[0]}';go('signup')">${p[1] ? 'Choose ' + p[0] : 'Contact sales'}</button></div>`).join('')}
+    <button class="btn ${p[4] ? 'btn-gold' : 'btn-line'}" onclick="STATE.plan='${p[0]}';go('signup')">${p[1] ? L('Choose ' + p[0], 'اختر ' + p[0]) : L('Contact sales', 'تواصل مع المبيعات')}</button></div>`).join('')}
   </div></div></div>${pubFoot()}</div>`;
 
 PUB.forgot = () => authShell(`
-  <h3>Reset password</h3><div class="sub">Enter your email — we'll send a reset link.</div>
-  <div class="field" id="f-femail"><label>Email</label><input id="femail" type="email" placeholder="owner@restaurant.sa"><div class="err">Valid email required.</div></div>
-  <button class="btn btn-navy" style="width:100%" onclick="doReset()">Send reset link</button>
-  <div class="or"></div><button class="btn btn-line" style="width:100%" onclick="go('login')">Back to login</button>`);
+  <h3>${L('Reset password', 'إعادة تعيين كلمة المرور')}</h3><div class="sub">${L('Enter your email — we will send a reset link.', 'أدخل بريدك — سنرسل رابط إعادة التعيين.')}</div>
+  <div class="field" id="f-femail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="femail" type="email" placeholder="owner@restaurant.sa"><div class="err">${L('Valid email required.', 'بريد صحيح مطلوب.')}</div></div>
+  <button class="btn btn-navy" style="width:100%" onclick="doReset()">${L('Send reset link', 'إرسال رابط التعيين')}</button>
+  <div class="or"></div><button class="btn btn-line" style="width:100%" onclick="go('login')">${L('Back to login', 'العودة لتسجيل الدخول')}</button>`);
 
 async function doReset() {
   const e = $('femail').value.trim().toLowerCase();
@@ -106,15 +106,15 @@ async function doReset() {
     redirectTo: window.location.origin + '/reset',
   });
   if (error) { toast(error.message, 'bad'); return; }
-  toast('Reset link sent — check your email.');
+  toast(L('Reset link sent — check your email.', 'تم إرسال رابط التعيين — تحقق من بريدك.'));
   go('login');
 }
 
 PUB.verify = () => authShell(`
-  <h3>Check your email</h3>
-  <div class="sub">We sent a confirmation link to <b>${esc(STATE.pendingSignup?.email || 'your email')}</b>. Click it to verify your account, then log in.</div>
-  <button class="btn btn-navy" style="width:100%;margin-top:18px" onclick="go('login')">Go to login</button>`);
+  <h3>${L('Check your email', 'تحقق من بريدك')}</h3>
+  <div class="sub">${L('We sent a confirmation link to', 'أرسلنا رابط تأكيد إلى')} <b>${esc(STATE.pendingSignup?.email || (isAr() ? 'بريدك' : 'your email'))}</b>. ${L('Click it to verify your account, then log in.', 'انقر عليه لتأكيد حسابك، ثم سجّل الدخول.')}</div>
+  <button class="btn btn-navy" style="width:100%;margin-top:18px" onclick="go('login')">${L('Go to login', 'الذهاب لتسجيل الدخول')}</button>`);
 
 PUB.orgsetup = () => authShell(`
-  <h3>Almost there</h3><div class="sub">Your account was created. Log in to finish setting up your restaurant workspace.</div>
-  <button class="btn btn-gold" style="width:100%;margin-top:18px" onclick="go('login')">Log in now →</button>`);
+  <h3>${L('Almost there', 'اقتربت')}</h3><div class="sub">${L('Your account was created. Log in to finish setting up your restaurant workspace.', 'تم إنشاء حسابك. سجّل الدخول لإكمال إعداد مساحة عمل مطعمك.')}</div>
+  <button class="btn btn-gold" style="width:100%;margin-top:18px" onclick="go('login')">${L('Log in now →', 'سجّل الدخول الآن ←')}</button>`);

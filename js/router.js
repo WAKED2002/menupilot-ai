@@ -49,14 +49,14 @@ const AFTER = {};
 /* ── Auth: Supabase-backed signup / login ──────────────────── */
 
 PUB.login = () => authShell(`
-  <h3>Welcome back</h3><div class="sub">Log in to your restaurant workspace.</div>
-  <button class="gbtn" onclick="enterDemo()"><span style="font-weight:800;color:var(--gold)">D</span> Open seeded demo workspace</button>
-  <div class="or">or with your account</div>
-  <div class="field" id="f-lemail"><label>Email</label><input id="lemail" type="email" placeholder="owner@restaurant.sa"><div class="err">Enter a valid email.</div></div>
-  <div class="field" id="f-lpass"><label>Password</label><input id="lpass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><div class="err">Password required.</div></div>
-  <button class="btn btn-navy" id="btnLogin" style="width:100%" onclick="doLogin()">Log in</button>
-  <div class="or">new here?</div>
-  <button class="btn btn-line" style="width:100%" onclick="go('signup')">Create an account</button>`);
+  <h3>${L('Welcome back', 'مرحباً بعودتك')}</h3><div class="sub">${L('Log in to your restaurant workspace.', 'سجّل الدخول إلى مساحة عمل مطعمك.')}</div>
+  <button class="gbtn" onclick="enterDemo()"><span style="font-weight:800;color:var(--gold)">D</span> ${L('Open seeded demo workspace', 'افتح مساحة العرض التجريبي')}</button>
+  <div class="or">${L('or with your account', 'أو بحسابك')}</div>
+  <div class="field" id="f-lemail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="lemail" type="email" placeholder="owner@restaurant.sa"><div class="err">${L('Enter a valid email.', 'أدخل بريداً صحيحاً.')}</div></div>
+  <div class="field" id="f-lpass"><label>${L('Password', 'كلمة المرور')}</label><input id="lpass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><div class="err">${L('Password required.', 'كلمة المرور مطلوبة.')}</div></div>
+  <button class="btn btn-navy" id="btnLogin" style="width:100%" onclick="doLogin()">${L('Log in', 'تسجيل الدخول')}</button>
+  <div class="or">${L('new here?', 'جديد هنا؟')}</div>
+  <button class="btn btn-line" style="width:100%" onclick="go('signup')">${L('Create an account', 'إنشاء حساب')}</button>`);
 
 async function doLogin() {
   const email = $('lemail').value.trim().toLowerCase();
@@ -66,13 +66,13 @@ async function doLogin() {
   if (!email.includes('@') || !pass) return;
 
   const btn = $('btnLogin');
-  if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+  if (btn) { btn.disabled = true; btn.textContent = L('Signing in…', 'جارٍ تسجيل الدخول…'); }
 
   const { data, error } = await DB.signIn(email, pass);
 
   if (error) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Log in'; }
-    toast(error.message || 'Login failed', 'bad');
+    if (btn) { btn.disabled = false; btn.textContent = L('Log in', 'تسجيل الدخول'); }
+    toast(error.message || L('Login failed', 'فشل تسجيل الدخول'), 'bad');
     return;
   }
 
@@ -90,24 +90,24 @@ async function doLogin() {
     STATE.route = 'orgsetup';
   }
 
-  toast('Welcome back, ' + STATE.user.n.split(' ')[0] + '.');
+  toast(L('Welcome back, ' + STATE.user.n.split(' ')[0] + '.', 'مرحباً بعودتك، ' + STATE.user.n.split(' ')[0] + '.'));
   go(STATE.route || 'dash');
 }
 
 PUB.signup = () => authShell(`
-  <h3>Create your workspace</h3><div class="sub">Tell us about you and your restaurant.</div>
+  <h3>${L('Create your workspace', 'أنشئ مساحة عملك')}</h3><div class="sub">${L('Tell us about you and your restaurant.', 'أخبرنا عنك وعن مطعمك.')}</div>
   <div class="grid g2">
-   <div class="field" id="f-sname"><label>Owner name</label><input id="sname" placeholder="Bandar Waked"><div class="err">Required.</div></div>
-   <div class="field" id="f-semail"><label>Email</label><input id="semail" type="email" placeholder="you@restaurant.sa"><div class="err">Valid email required.</div></div>
-   <div class="field" id="f-srest"><label>Restaurant name</label><input id="srest" placeholder="Kabaila Seafood"><div class="err">Required.</div></div>
-   <div class="field"><label>City</label><input id="scity" placeholder="Riyadh"></div>
-   <div class="field"><label>Country</label><select id="scountry"><option>Saudi Arabia</option><option>UAE</option><option>Kuwait</option><option>Qatar</option><option>Bahrain</option><option>Oman</option></select></div>
-   <div class="field"><label>Number of branches</label><input id="sbr" type="number" value="1" min="1"></div>
+   <div class="field" id="f-sname"><label>${L('Owner name', 'اسم المالك')}</label><input id="sname" placeholder="${L('Bandar Waked', 'بندر واكد')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
+   <div class="field" id="f-semail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="semail" type="email" placeholder="you@restaurant.sa"><div class="err">${L('Valid email required.', 'بريد صحيح مطلوب.')}</div></div>
+   <div class="field" id="f-srest"><label>${L('Restaurant name', 'اسم المطعم')}</label><input id="srest" placeholder="${L('Kabaila Seafood', 'كبايلا للمأكولات البحرية')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
+   <div class="field"><label>${L('City', 'المدينة')}</label><input id="scity" placeholder="${L('Riyadh', 'الرياض')}"></div>
+   <div class="field"><label>${L('Country', 'الدولة')}</label><select id="scountry"><option>${L('Saudi Arabia', 'السعودية')}</option><option>${L('UAE', 'الإمارات')}</option><option>${L('Kuwait', 'الكويت')}</option><option>${L('Qatar', 'قطر')}</option><option>${L('Bahrain', 'البحرين')}</option><option>${L('Oman', 'عُمان')}</option></select></div>
+   <div class="field"><label>${L('Number of branches', 'عدد الفروع')}</label><input id="sbr" type="number" value="1" min="1"></div>
   </div>
-  <div class="field"><label>Restaurant type</label><select id="stype">${TYPES.map(t => `<option>${t[1]}</option>`).join('')}</select></div>
-  <div class="field" id="f-spass"><label>Password</label><input id="spass" type="password" placeholder="8+ characters"><div class="err">At least 8 characters.</div></div>
-  <button class="btn btn-gold" style="width:100%" onclick="doSignup()">Create account →</button>
-  <p class="note" style="margin-top:12px;text-align:center">Already have an account? <a href="#" onclick="go('login');return false" style="color:var(--gold);font-weight:600">Log in</a></p>`);
+  <div class="field"><label>${L('Restaurant type', 'نوع المطعم')}</label><select id="stype">${TYPES.map(t => `<option>${t[1]}</option>`).join('')}</select></div>
+  <div class="field" id="f-spass"><label>${L('Password', 'كلمة المرور')}</label><input id="spass" type="password" placeholder="${L('8+ characters', '8 أحرف أو أكثر')}"><div class="err">${L('At least 8 characters.', '8 أحرف على الأقل.')}</div></div>
+  <button class="btn btn-gold" style="width:100%" onclick="doSignup()">${L('Create account →', 'إنشاء حساب ←')}</button>
+  <p class="note" style="margin-top:12px;text-align:center">${L('Already have an account?', 'لديك حساب بالفعل؟')} <a href="#" onclick="go('login');return false" style="color:var(--gold);font-weight:600">${L('Log in', 'تسجيل الدخول')}</a></p>`);
 
 async function doSignup() {
   const v = id => $(id).value.trim();
@@ -117,7 +117,7 @@ async function doSignup() {
   e |= bad('f-semail', !v('semail').includes('@'));
   e |= bad('f-srest', !v('srest'));
   e |= bad('f-spass', v('spass').length < 8);
-  if (e) { toast('Please fix the highlighted fields', 'bad'); return; }
+  if (e) { toast(L('Please fix the highlighted fields', 'يرجى تصحيح الحقول المُظللة'), 'bad'); return; }
 
   const email = v('semail').toLowerCase();
   const { data, error } = await DB.signUp(email, v('spass'), { name: v('sname') });
@@ -133,7 +133,7 @@ async function doSignup() {
     plan: 'Growth',
   });
 
-  if (orgErr) { toast('Account created but org setup failed: ' + orgErr.message, 'bad'); return; }
+  if (orgErr) { toast(L('Account created but org setup failed: ', 'أُنشئ الحساب لكن فشل إعداد المنشأة: ') + orgErr.message, 'bad'); return; }
 
   // Set branches
   const branches = Array.from({ length: +v('sbr') || 1 }, (_, i) => 'Branch ' + (i + 1));
@@ -155,7 +155,7 @@ async function doSignup() {
   STATE.user = { n: v('sname'), email, role: 'Owner' };
   STATE.ob = { step: 1, src: 'paste', extracted: false };
 
-  toast('Account created — welcome, ' + v('sname').split(' ')[0] + '!');
+  toast(L('Account created — welcome, ' + v('sname').split(' ')[0] + '!', 'تم إنشاء الحساب — أهلاً، ' + v('sname').split(' ')[0] + '!'));
   go('onboarding');
 }
 
@@ -207,7 +207,7 @@ function gSearch(v) {
   const hits = [...STATE.menu.filter(m => m.n.toLowerCase().includes(lo)).slice(0, 4).map(m => ['☰ ' + m.n, 'costing']),
     ...STATE.ings.filter(i => i.n.toLowerCase().includes(lo)).slice(0, 3).map(i => ['⬡ ' + i.n, 'ing']),
     ...Object.keys(I18N.en).filter(k => I18N.en[k].toLowerCase().includes(lo) && PAGES[k]).slice(0, 3).map(k => ['▦ ' + T(k), k])];
-  box.innerHTML = hits.length ? `<div class="sresults">${hits.map(h => `<button onclick="$('gsearch').value='';$('sres').innerHTML='';go('${h[1]}')"><span>${esc(h[0])}</span><span class="note">open</span></button>`).join('')}</div>` : '';
+  box.innerHTML = hits.length ? `<div class="sresults">${hits.map(h => `<button onclick="$('gsearch').value='';$('sres').innerHTML='';go('${h[1]}')"><span>${esc(h[0])}</span><span class="note">${L('open', 'فتح')}</span></button>`).join('')}</div>` : '';
 }
 
 async function clearNotifs() {
@@ -227,7 +227,7 @@ function emptyMenuState() {
 function authShell(inner, head) {
   return `<div class="auth">
  <div class="auth-side"><button class="brand" onclick="go('landing')"><span class="mark">◔</span> MenuPilot AI</button>
-  <h2>${head || 'Run your menu like a <em>CFO</em>.'}</h2>
-  <div class="note" style="color:#5E7682">Saudi-first restaurant financial intelligence · SAR · ZATCA-aware</div></div>
+  <h2>${head || L('Run your menu like a <em>CFO</em>.', 'أدِر قائمتك كأنك <em>مدير مالي</em>.')}</h2>
+  <div class="note" style="color:#5E7682">${L('Saudi-first restaurant financial intelligence · SAR · ZATCA-aware', 'ذكاء مالي للمطاعم سعودي أولاً · ر.س · متوافق مع زاتكا')}</div></div>
  <div class="auth-panel"><div class="auth-card">${inner}</div></div></div>`;
 }

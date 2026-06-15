@@ -109,37 +109,37 @@ PAGES.eng = () => {
   const X = qv => pad + qv / maxQ * (W - pad - 18);
   const Y = mm => H - pad - Math.max(0, mm) / maxM * (H - pad - 18);
   const cols = { Star: '#177E6F', Puzzle: '#C9981F', 'Plow Horse': '#3D6485', Dog: '#CE5343' };
-  return `<div class="card"><h4>Profitability Analyst Agent <span class="tag gold">Agent F</span> <span class="note">bubble = monthly profit contribution</span></h4>
+  return `<div class="card"><h4>${L('Profitability Analyst Agent', 'وكيل تحليل الربحية')} <span class="tag gold">${L('Agent F', 'الوكيل F')}</span> <span class="note">${L('bubble = monthly profit contribution', 'الفقاعة = مساهمة الربح الشهري')}</span></h4>
  <svg viewBox="0 0 ${W} ${H}" width="100%" role="img">
   <line x1="${X(md.q)}" y1="16" x2="${X(md.q)}" y2="${H - pad}" stroke="var(--line)" stroke-dasharray="4 4"/>
   <line x1="${pad}" y1="${Y(md.m)}" x2="${W - 18}" y2="${Y(md.m)}" stroke="var(--line)" stroke-dasharray="4 4"/>
   <line x1="${pad}" y1="${H - pad}" x2="${W - 18}" y2="${H - pad}" stroke="var(--muted)"/>
   <line x1="${pad}" y1="16" x2="${pad}" y2="${H - pad}" stroke="var(--muted)"/>
-  <text x="${W / 2}" y="${H - 12}" font-size="11" fill="var(--muted)" text-anchor="middle">Popularity (plates/month) →</text>
-  <text x="14" y="${H / 2}" font-size="11" fill="var(--muted)" transform="rotate(-90 14 ${H / 2})" text-anchor="middle">Net margin % →</text>
+  <text x="${W / 2}" y="${H - 12}" font-size="11" fill="var(--muted)" text-anchor="middle">${L('Popularity (plates/month) →', 'الرواج (أطباق/شهر) ←')}</text>
+  <text x="14" y="${H / 2}" font-size="11" fill="var(--muted)" transform="rotate(-90 14 ${H / 2})" text-anchor="middle">${L('Net margin % →', 'الهامش الصافي % ←')}</text>
   ${STATE.menu.map(m => `<circle cx="${X(m.sold)}" cy="${Y(marginPct(m))}" r="${6 + Math.max(0, margin(m)) * m.sold / 4200}" fill="${cols[mLabel(m)]}" opacity=".85"><title>${esc(m.n)}</title></circle>
    <text x="${X(m.sold) + 9}" y="${Y(marginPct(m)) + 4}" font-size="10" fill="var(--muted)">${esc(m.n.split(' ').slice(0, 2).join(' '))}</text>`).join('')}
  </svg>
- <div class="legend"><span><i style="background:#177E6F"></i>Star</span><span><i style="background:#C9981F"></i>Puzzle</span><span><i style="background:#3D6485"></i>Plow Horse</span><span><i style="background:#CE5343"></i>Dog</span></div></div>
- <div class="card" style="margin-top:13px"><h4>Actions</h4>
- <table><tr><th>Item</th><th>Class</th><th>Recommendation</th><th></th></tr>
- ${STATE.menu.map(m => `<tr><td>${esc(m.n)}</td><td><span class="tag ${mCls(m)}">${mLabel(m)}</span></td>
-  <td class="note">${mAction(m)}</td>
+ <div class="legend"><span><i style="background:#177E6F"></i>${L('Star', 'نجم')}</span><span><i style="background:#C9981F"></i>${L('Puzzle', 'لغز')}</span><span><i style="background:#3D6485"></i>${L('Plow Horse', 'حصان جرّار')}</span><span><i style="background:#CE5343"></i>${L('Dog', 'كلب')}</span></div></div>
+ <div class="card" style="margin-top:13px"><h4>${L('Actions', 'الإجراءات')}</h4>
+ <table><tr><th>${L('Item', 'الصنف')}</th><th>${L('Class', 'الفئة')}</th><th>${L('Recommendation', 'التوصية')}</th><th></th></tr>
+ ${STATE.menu.map(m => `<tr><td>${esc(m.n)}</td><td><span class="tag ${mCls(m)}">${mLabelD(m)}</span></td>
+  <td class="note">${mActionD(m)}</td>
   <td style="white-space:nowrap">
-   ${mLabel(m) === 'Star' ? `<button class="btn btn-sm btn-line" onclick="toast('${esc(m.n)} pinned to featured combos')">Promote</button>` : ''}
-   ${['Puzzle', 'Plow Horse'].includes(mLabel(m)) ? `<button class="btn btn-sm btn-line" onclick="pSel.item=${STATE.menu.indexOf(m)};go('pricing')">Reprice</button>` : ''}
-   ${mLabel(m) === 'Dog' ? `<button class="btn btn-sm btn-danger" onclick="STATE.menu=STATE.menu.filter(x=>x.id!==${q(m.id)});render();toast('Item removed','bad')">Remove</button>` : ''}
+   ${mLabel(m) === 'Star' ? `<button class="btn btn-sm btn-line" onclick="toast(L('${esc(m.n)} pinned to featured combos','تم تثبيت ${esc(m.n)} ضمن الوجبات المميزة'))">${L('Promote', 'روّج')}</button>` : ''}
+   ${['Puzzle', 'Plow Horse'].includes(mLabel(m)) ? `<button class="btn btn-sm btn-line" onclick="pSel.item=${STATE.menu.indexOf(m)};go('pricing')">${L('Reprice', 'أعد التسعير')}</button>` : ''}
+   ${mLabel(m) === 'Dog' ? `<button class="btn btn-sm btn-danger" onclick="STATE.menu=STATE.menu.filter(x=>x.id!==${q(m.id)});render();toast(L('Item removed','تم حذف الصنف'),'bad')">${L('Remove', 'حذف')}</button>` : ''}
   </td></tr>`).join('')}</table></div>`;
 };
 
 // ── AI Copilot — Restaurant CFO Agent (Agent H) ───────────────
 // This is now a REAL Claude call via /api/analyze
-PAGES.copilot = () => `<div class="card copilot"><h4>Restaurant CFO Agent <span class="tag gold">Agent H</span> <span class="tag info">Powered by Claude</span></h4>
+PAGES.copilot = () => `<div class="card copilot"><h4>${L('Restaurant CFO Agent', 'وكيل المدير المالي للمطعم')} <span class="tag gold">${L('Agent H', 'الوكيل H')}</span> <span class="tag info">${L('Powered by Claude', 'مدعوم بـ Claude')}</span></h4>
  <div class="chatlog" id="chatlog">
-  <div class="msg ai">Marhaba${STATE.user ? ', ' + esc(STATE.user.n.split(' ')[0]) : ''}! I'm your virtual CFO with live access to your costs, recipes, payroll and compliance fees. Ask me anything — I'm powered by Claude AI and your actual numbers.</div>
+  <div class="msg ai">${L('Marhaba' + (STATE.user ? ', ' + esc(STATE.user.n.split(' ')[0]) : '') + '! I am your virtual CFO with live access to your costs, recipes, payroll and compliance fees. Ask me anything — I am powered by Claude AI and your actual numbers.', 'مرحباً' + (STATE.user ? ' ' + esc(STATE.user.n.split(' ')[0]) : '') + '! أنا مديرك المالي الافتراضي مع وصول مباشر لتكاليفك ووصفاتك ورواتبك ورسوم الامتثال. اسألني أي شيء — أنا مدعوم بـ Claude وأرقامك الفعلية.')}</div>
  </div>
- <div class="suggest">${['Which items are losing money?','Which items should I reprice?','What is my break-even point?','What happens if fish prices increase?','Which supplier is most expensive?','How can I increase profit by 10%?','Which delivery app hurts my margin?'].map(s => `<button onclick="ask('${s}')">${s}</button>`).join('')}</div>
- <div class="chatin"><input id="chatin" placeholder="Ask your CFO agent…" onkeydown="if(event.key==='Enter')ask()"><button class="btn btn-gold" onclick="ask()">Send</button></div></div>`;
+ <div class="suggest">${(isAr() ? ['أي الأصناف تخسر؟','أي الأصناف يجب أن أعيد تسعيرها؟','ما نقطة التعادل؟','ماذا لو ارتفعت أسعار السمك؟','أي مورّد هو الأغلى؟','كيف أزيد الربح 10%؟','أي تطبيق توصيل يضر بهامشي؟'] : ['Which items are losing money?','Which items should I reprice?','What is my break-even point?','What happens if fish prices increase?','Which supplier is most expensive?','How can I increase profit by 10%?','Which delivery app hurts my margin?']).map(s => `<button onclick="ask('${s}')">${s}</button>`).join('')}</div>
+ <div class="chatin"><input id="chatin" placeholder="${L('Ask your CFO agent…', 'اسأل وكيلك المالي…')}" onkeydown="if(event.key==='Enter')ask()"><button class="btn btn-gold" onclick="ask()">${L('Send', 'إرسال')}</button></div></div>`;
 
 async function ask(qs) {
   const inp = $('chatin');
@@ -152,7 +152,7 @@ async function ask(qs) {
   log.scrollTop = log.scrollHeight;
 
   if (!STATE.menu.length) {
-    $('thinking').outerHTML = `<div class="msg ai">Your menu is empty — run AI onboarding first and I'll have a full cost base to reason over.</div>`;
+    $('thinking').outerHTML = `<div class="msg ai">${L('Your menu is empty — run AI onboarding first and I will have a full cost base to reason over.', 'قائمتك فارغة — شغّل الإعداد الذكي أولاً ليتوفر لديّ قاعدة تكاليف كاملة للتحليل.')}</div>`;
     return;
   }
 
@@ -162,7 +162,7 @@ async function ask(qs) {
   } catch (err) {
     // Graceful fallback: let Claude be unavailable without breaking the app
     const fallback = cfoFallback(qs);
-    $('thinking').outerHTML = `<div class="msg ai">${fallback}\n\n<span class="note">(Claude unavailable — using built-in analysis)</span></div>`;
+    $('thinking').outerHTML = `<div class="msg ai">${fallback}\n\n<span class="note">${L('(Claude unavailable — using built-in analysis)', '(Claude غير متاح — يُستخدم التحليل المدمج)')}</span></div>`;
   }
   log.scrollTop = log.scrollHeight;
 }
@@ -172,13 +172,13 @@ function cfoFallback(qs) {
   const lo = qs.toLowerCase(), t = totals(), be = breakEven();
   const losing = STATE.menu.filter(m => margin(m) <= 0);
   const thin   = STATE.menu.filter(m => marginPct(m) < 20 && margin(m) > 0);
-  if (lo.includes('losing') || lo.includes('lose'))
+  if (lo.includes('losing') || lo.includes('lose') || qs.includes('تخسر') || qs.includes('خسار'))
     return losing.length
-      ? `Items losing money:\n${losing.map(m => `• ${m.n} — cost ${SAR2(cost(m))} vs price ${SAR2(m.price)} (${pct(marginPct(m))})`).join('\n')}\nMonthly bleed: ${SAR(Math.round(losing.reduce((a, m) => a + Math.abs(margin(m)) * m.sold, 0)))}.`
-      : `No item is underwater. ${thin.length} sit under the 20% floor:\n${thin.map(m => `• ${m.n} — ${pct(marginPct(m))}`).join('\n')}`;
-  if (lo.includes('break'))
-    return `Break-even: fixed costs ${SAR(Math.round(be.fixed))}, CMR ${pct(be.cmr * 100)}, break-even revenue ${SAR(Math.round(be.rev))}. You are ${t.rev > be.rev ? 'above' : 'below'} by ${SAR(Math.round(Math.abs(t.rev - be.rev)))}.`;
-  return `I can answer about: losing items, repricing, break-even, ingredient shocks, supplier spend, +10% profit plans, and delivery apps. For everything else the Scenario Simulator and Pricing Center are one click away.`;
+      ? `${L('Items losing money:', 'أصناف تخسر:')}\n${losing.map(m => `• ${m.n} — ${L('cost', 'التكلفة')} ${SAR2(cost(m))} ${L('vs price', 'مقابل السعر')} ${SAR2(m.price)} (${pct(marginPct(m))})`).join('\n')}\n${L('Monthly bleed:', 'النزيف الشهري:')} ${SAR(Math.round(losing.reduce((a, m) => a + Math.abs(margin(m)) * m.sold, 0)))}.`
+      : `${L('No item is underwater.', 'لا يوجد صنف يخسر.')} ${L(thin.length + ' sit under the 20% floor:', thin.length + ' أصناف تحت حد 20%:')}\n${thin.map(m => `• ${m.n} — ${pct(marginPct(m))}`).join('\n')}`;
+  if (lo.includes('break') || qs.includes('تعادل'))
+    return `${L('Break-even:', 'نقطة التعادل:')} ${L('fixed costs', 'التكاليف الثابتة')} ${SAR(Math.round(be.fixed))}, ${L('CMR', 'نسبة هامش المساهمة')} ${pct(be.cmr * 100)}, ${L('break-even revenue', 'إيرادات التعادل')} ${SAR(Math.round(be.rev))}. ${t.rev > be.rev ? L('You are above by', 'أنت فوقها بمقدار') : L('You are below by', 'أنت تحتها بمقدار')} ${SAR(Math.round(Math.abs(t.rev - be.rev)))}.`;
+  return L('I can answer about: losing items, repricing, break-even, ingredient shocks, supplier spend, +10% profit plans, and delivery apps. For everything else the Scenario Simulator and Pricing Center are one click away.', 'يمكنني الإجابة عن: الأصناف الخاسرة، إعادة التسعير، نقطة التعادل، صدمات أسعار المكونات، إنفاق الموردين، خطط زيادة الربح 10%، وتطبيقات التوصيل. ولكل ما عدا ذلك، محاكي السيناريوهات ومركز التسعير على بُعد نقرة.');
 }
 
 // ── Scenario Simulator ────────────────────────────────────────
@@ -186,12 +186,12 @@ let SC = { fish: 0, shr: 0, sal: 0, del: 0, util: 0 };
 PAGES.scen = () => {
   if (!STATE.menu.length) return emptyMenuState();
   return `<div class="grid g2">
- <div class="card"><h4>Stress levers</h4>
-  ${[['fish','Fish & seafood purchase prices','%',-20,60],['shr','Shrimp purchase prices','%',-20,60],['sal','Salaries & labor','%',0,30],['del','Delivery commission','+pts',0,10],['util','Utilities','%',0,40]].map(([k, l, u, mn, mx]) => `
+ <div class="card"><h4>${L('Stress levers', 'روافع الضغط')}</h4>
+  ${[['fish',L('Fish & seafood purchase prices','أسعار شراء السمك والمأكولات البحرية'),'%',-20,60],['shr',L('Shrimp purchase prices','أسعار شراء الروبيان'),'%',-20,60],['sal',L('Salaries & labor','الرواتب والعمالة'),'%',0,30],['del',L('Delivery commission','عمولة التوصيل'),'+pts',0,10],['util',L('Utilities','المرافق'),'%',0,40]].map(([k, l, u, mn, mx]) => `
    <div class="slider-row"><div class="top"><span>${l}</span><b>${SC[k] >= 0 ? '+' : ''}${SC[k]}${u}</b></div>
    <input type="range" min="${mn}" max="${mx}" value="${SC[k]}" oninput="SC.${k}=+this.value;render()"></div>`).join('')}
-  <button class="btn btn-line btn-sm" onclick="SC={fish:0,shr:0,sal:0,del:0,util:0};render()">Reset</button></div>
- <div class="card"><h4>Profit impact — monthly</h4>${scenOut()}</div></div>`;
+  <button class="btn btn-line btn-sm" onclick="SC={fish:0,shr:0,sal:0,del:0,util:0};render()">${L('Reset', 'إعادة تعيين')}</button></div>
+ <div class="card"><h4>${L('Profit impact — monthly', 'أثر الربح — شهري')}</h4>${scenOut()}</div></div>`;
 };
 
 function scenOut() {
@@ -210,12 +210,12 @@ function scenOut() {
     if (m.price > 0 && (m.price - c1) / m.price < 0.10) hits.push(m.n);
   });
   const base = totals().net, d = np - base;
-  return `<div class="kpi"><div class="l">Net item contribution under scenario</div>
+  return `<div class="kpi"><div class="l">${L('Net item contribution under scenario', 'صافي مساهمة الأصناف ضمن السيناريو')}</div>
   <div class="bigprofit ${d >= 0 ? 'up' : 'down'}">${SAR(Math.round(np))}</div>
-  <div class="d ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${SAR(Math.round(d))} vs baseline ${SAR(Math.round(base))}</div></div>
+  <div class="d ${d >= 0 ? 'up' : 'down'}">${d >= 0 ? '+' : ''}${SAR(Math.round(d))} ${L('vs baseline', 'مقابل الأساس')} ${SAR(Math.round(base))}</div></div>
  <div class="bartrack" style="margin:16px 0 10px"><i style="width:${Math.max(2, Math.min(100, np / (base || 1) * 100))}%;background:${np >= base * 0.7 ? 'var(--teal)' : 'var(--coral)'}"></i></div>
- ${hits.length ? `<div class="alert bad"><span>▲</span><div>Below 10% margin: <b>${hits.map(esc).join(', ')}</b></div></div>`
- : '<div class="alert good"><span>✓</span><div>All items hold above a 10% net margin under this scenario.</div></div>'}`;
+ ${hits.length ? `<div class="alert bad"><span>▲</span><div>${L('Below 10% margin:', 'تحت هامش 10%:')} <b>${hits.map(esc).join(', ')}</b></div></div>`
+ : `<div class="alert good"><span>✓</span><div>${L('All items hold above a 10% net margin under this scenario.', 'كل الأصناف تبقى فوق هامش صافٍ 10% ضمن هذا السيناريو.')}</div></div>`}`;
 }
 
 // ── Costing page (per-item true cost breakdown) ───────────────
@@ -260,34 +260,46 @@ const ROLE_PERMS = {
   Accountant: ['Costs, fees, reports, read-only menu'],
   Chef: ['Recipes & ingredients only'],
 };
-PAGES.usersP = () => `<div class="card"><h4>Team <span class="note">${STATE.users.length} members</span><button class="btn btn-navy btn-sm" onclick="inviteModal()">+ Invite user</button></h4>
- <table><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th></th></tr>
+const ROLE_PERMS_AR = {
+  Owner: ['كل شيء بما في ذلك الفوترة والمستخدمين'],
+  Manager: ['القائمة، الوصفات، التسعير، المشتريات', 'بدون فوترة أو إدارة مستخدمين'],
+  Accountant: ['التكاليف، الرسوم، التقارير، القائمة للعرض فقط'],
+  Chef: ['الوصفات والمكونات فقط'],
+};
+const ROLE_AR = { Owner: 'المالك', Manager: 'مدير', Accountant: 'محاسب', Chef: 'طاهٍ' };
+const roleName = r => isAr() ? (ROLE_AR[r] || r) : r;
+const rolePerms = r => (isAr() ? ROLE_PERMS_AR[r] : ROLE_PERMS[r]) || [];
+const statusD = st => isAr() ? ({ Active: 'نشط', Invited: 'مدعو', Paid: 'مدفوع', Pending: 'معلّق' }[st] || st) : st;
+const GROUP_AR = { Operations: 'العمليات', Utilities: 'المرافق', Technology: 'التقنية', Marketing: 'التسويق', Finance: 'المالية', Shrinkage: 'الهدر' };
+const groupD = g => isAr() ? (GROUP_AR[g] || g) : g;
+PAGES.usersP = () => `<div class="card"><h4>${L('Team', 'الفريق')} <span class="note">${STATE.users.length} ${L('members', 'عضو')}</span><button class="btn btn-navy btn-sm" onclick="inviteModal()">${L('+ Invite user', '+ دعوة مستخدم')}</button></h4>
+ <table><tr><th>${L('Name', 'الاسم')}</th><th>${L('Email', 'البريد')}</th><th>${L('Role', 'الدور')}</th><th>${L('Status', 'الحالة')}</th><th></th></tr>
  ${STATE.users.map((u, i) => `<tr><td>${esc(u.n)}</td><td class="note">${esc(u.email)}</td>
-  <td>${u.role === 'Owner' ? '<span class="tag gold">Owner</span>' : `<select class="tbl-edit" style="width:120px;text-align:start" onchange="STATE.users[${i}].role=this.value;toast('Role updated')">${['Manager','Accountant','Chef'].map(r => `<option ${u.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select>`}</td>
-  <td><span class="tag ${u.st === 'Active' ? 'ok' : 'warn'}">${u.st}</span></td>
-  <td>${u.role !== 'Owner' ? `<button class="btn btn-sm btn-danger" onclick="STATE.users.splice(${i},1);render()">Remove</button>` : ''}</td></tr>`).join('')}</table></div>
- <div class="card" style="margin-top:13px"><h4>Roles & permissions</h4>
- <div class="grid g4">${Object.entries(ROLE_PERMS).map(([r, ps]) => `<div><b style="font-size:13px">${r}</b><ul style="margin:7px 0 0 16px;font-size:12px;color:var(--muted)">${ps.map(p => `<li>${p}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
+  <td>${u.role === 'Owner' ? `<span class="tag gold">${L('Owner', 'المالك')}</span>` : `<select class="tbl-edit" style="width:120px;text-align:start" onchange="STATE.users[${i}].role=this.value;toast(L('Role updated','تم تحديث الدور'))">${['Manager','Accountant','Chef'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${roleName(r)}</option>`).join('')}</select>`}</td>
+  <td><span class="tag ${u.st === 'Active' ? 'ok' : 'warn'}">${statusD(u.st)}</span></td>
+  <td>${u.role !== 'Owner' ? `<button class="btn btn-sm btn-danger" onclick="STATE.users.splice(${i},1);render()">${L('Remove', 'حذف')}</button>` : ''}</td></tr>`).join('')}</table></div>
+ <div class="card" style="margin-top:13px"><h4>${L('Roles & permissions', 'الأدوار والصلاحيات')}</h4>
+ <div class="grid g4">${Object.keys(ROLE_PERMS).map(r => `<div><b style="font-size:13px">${roleName(r)}</b><ul style="margin:7px 0 0 16px;font-size:12px;color:var(--muted)">${rolePerms(r).map(p => `<li>${p}</li>`).join('')}</ul></div>`).join('')}</div></div>`;
 
 function inviteModal() {
-  modal(`<h3>Invite a team member</h3>
- <div class="field"><label>Name</label><input id="ivN"></div>
- <div class="field"><label>Email</label><input id="ivE" type="email"></div>
- <div class="field"><label>Role</label><select id="ivR"><option>Manager</option><option>Accountant</option><option>Chef</option></select></div>
- <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">Cancel</button>
- <button class="btn btn-gold" onclick="if(!$('ivE').value.includes('@')){toast('Valid email required','bad');return}STATE.users.push({n:$('ivN').value||$('ivE').value.split('@')[0],email:$('ivE').value,role:$('ivR').value,st:'Invited'});closeModal();render();toast('Invitation sent')">Send invite</button></div>`);
+  modal(`<h3>${L('Invite a team member', 'دعوة عضو للفريق')}</h3>
+ <div class="field"><label>${L('Name', 'الاسم')}</label><input id="ivN"></div>
+ <div class="field"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="ivE" type="email"></div>
+ <div class="field"><label>${L('Role', 'الدور')}</label><select id="ivR"><option value="Manager">${roleName('Manager')}</option><option value="Accountant">${roleName('Accountant')}</option><option value="Chef">${roleName('Chef')}</option></select></div>
+ <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">${L('Cancel', 'إلغاء')}</button>
+ <button class="btn btn-gold" onclick="if(!$('ivE').value.includes('@')){toast(L('Valid email required','بريد صحيح مطلوب'),'bad');return}STATE.users.push({n:$('ivN').value||$('ivE').value.split('@')[0],email:$('ivE').value,role:$('ivR').value,st:'Invited'});closeModal();render();toast(L('Invitation sent','تم إرسال الدعوة'))">${L('Send invite', 'إرسال الدعوة')}</button></div>`);
 }
 
 // ── Billing ───────────────────────────────────────────────────
 PAGES.billing = () => `<div class="grid g3">
- ${kpi('Current plan', STATE.plan, STATE.plan === 'Starter' ? 'SAR 299 / month' : STATE.plan === 'Growth' ? 'SAR 599 / month' : 'custom contract')}
- ${kpi('Branches used', STATE.org.branches.length + ' / ' + (STATE.plan === 'Starter' ? 1 : STATE.plan === 'Growth' ? 3 : '∞'))}
- ${kpi('Next renewal', '01 Jul 2026', 'auto-renews')}</div>
- <div class="card" style="margin-top:13px"><h4>Change plan</h4>
- <div style="display:flex;gap:8px;flex-wrap:wrap">${['Starter', 'Growth', 'Enterprise'].map(p => `<button class="chip ${STATE.plan === p ? 'on' : ''}" onclick="STATE.plan='${p}';render();toast('Plan changed to ${p}')">${p}</button>`).join('')}</div>
- <p class="note" style="margin-top:9px">Upgrades apply immediately; downgrades at the next cycle. VAT 15% added at checkout per ZATCA rules.</p></div>
- <div class="card" style="margin-top:13px"><h4>Invoices</h4><table><tr><th>Date</th><th>Invoice</th><th class="num">Amount (SAR)</th><th>Status</th></tr>
- ${STATE.invoices.map(v => `<tr><td>${v.d}</td><td class="note">${v.n}</td><td class="num">${v.amt}</td><td><span class="tag ${v.st === 'Paid' ? 'ok' : 'info'}">${v.st}</span></td></tr>`).join('')}</table></div>`;
+ ${kpi(L('Current plan', 'الباقة الحالية'), STATE.plan, STATE.plan === 'Starter' ? L('SAR 299 / month', '299 ر.س / شهر') : STATE.plan === 'Growth' ? L('SAR 599 / month', '599 ر.س / شهر') : L('custom contract', 'عقد مخصص'))}
+ ${kpi(L('Branches used', 'الفروع المستخدمة'), STATE.org.branches.length + ' / ' + (STATE.plan === 'Starter' ? 1 : STATE.plan === 'Growth' ? 3 : '∞'))}
+ ${kpi(L('Next renewal', 'التجديد القادم'), L('01 Jul 2026', '01 يوليو 2026'), L('auto-renews', 'يتجدد تلقائياً'))}</div>
+ <div class="card" style="margin-top:13px"><h4>${L('Change plan', 'تغيير الباقة')}</h4>
+ <div style="display:flex;gap:8px;flex-wrap:wrap">${['Starter', 'Growth', 'Enterprise'].map(p => `<button class="chip ${STATE.plan === p ? 'on' : ''}" onclick="STATE.plan='${p}';render();toast(L('Plan changed to ${p}','تم تغيير الباقة إلى ${p}'))">${p}</button>`).join('')}</div>
+ <p class="note" style="margin-top:9px">${L('Upgrades apply immediately; downgrades at the next cycle. VAT 15% added at checkout per ZATCA rules.', 'الترقيات تُطبّق فوراً؛ والتخفيضات في الدورة التالية. تُضاف ضريبة القيمة المضافة 15% عند الدفع وفق أنظمة زاتكا.')}</p></div>
+ <div class="card" style="margin-top:13px"><h4>${L('Invoices', 'الفواتير')}</h4><table><tr><th>${L('Date', 'التاريخ')}</th><th>${L('Invoice', 'الفاتورة')}</th><th class="num">${L('Amount (SAR)', 'المبلغ (ر.س)')}</th><th>${L('Status', 'الحالة')}</th></tr>
+ ${STATE.invoices.map(v => `<tr><td>${v.d}</td><td class="note">${v.n}</td><td class="num">${v.amt}</td><td><span class="tag ${v.st === 'Paid' ? 'ok' : 'info'}">${statusD(v.st)}</span></td></tr>`).join('')}</table></div>`;
 
 // ── Branch Performance ────────────────────────────────────────
 PAGES.branch = () => {
@@ -297,91 +309,91 @@ PAGES.branch = () => {
   const f = w[i];
   return `<div class="tabs">${brs.map((b, k) => `<button class="${k === i ? 'on' : ''}" onclick="STATE.branchView=${k};render()">${esc(b)}</button>`).join('')}</div>
   <div class="grid g4">
-   ${kpi('Branch revenue', SAR(Math.round(t.rev * f)), Math.round(f * 100) + '% of total')}
-   ${kpi('Branch net profit', SAR(Math.round(t.net * f)), '', t.net > 0 ? 'up' : 'down')}
-   ${kpi('Food cost %', pct(t.foodPct + (i ? 1.2 : -0.4)), 'vs ' + pct(t.foodPct) + ' blended')}
-   ${kpi('Orders / month', fmt(Math.round(totalUnits() * f)))}</div>
-  <div class="card" style="margin-top:13px"><h4>Branch-specific pricing</h4>
-   <p class="note" style="margin-bottom:10px">Items can carry a different price per branch (e.g., mall location +8%). Set branch overrides in the Pricing Center → Branch-specific strategy.</p>
-   <table><tr><th>Item</th><th class="num">Base price</th><th class="num">${esc(brs[i])} price</th></tr>
+   ${kpi(L('Branch revenue', 'إيرادات الفرع'), SAR(Math.round(t.rev * f)), Math.round(f * 100) + L('% of total', '% من الإجمالي'))}
+   ${kpi(L('Branch net profit', 'صافي ربح الفرع'), SAR(Math.round(t.net * f)), '', t.net > 0 ? 'up' : 'down')}
+   ${kpi(L('Food cost %', 'نسبة تكلفة الطعام %'), pct(t.foodPct + (i ? 1.2 : -0.4)), L('vs ', 'مقابل ') + pct(t.foodPct) + L(' blended', ' مدمجة'))}
+   ${kpi(L('Orders / month', 'الطلبات / شهر'), fmt(Math.round(totalUnits() * f)))}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Branch-specific pricing', 'تسعير خاص بالفرع')}</h4>
+   <p class="note" style="margin-bottom:10px">${L('Items can carry a different price per branch (e.g., mall location +8%). Set branch overrides in the Pricing Center → Branch-specific strategy.', 'يمكن أن يحمل الصنف سعراً مختلفاً لكل فرع (مثلاً موقع المول +8%). اضبط تجاوزات الفروع في مركز التسعير ← استراتيجية خاصة بالفرع.')}</p>
+   <table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Base price', 'السعر الأساسي')}</th><th class="num">${L(esc(brs[i]) + ' price', 'سعر ' + esc(brs[i]))}</th></tr>
    ${STATE.menu.slice(0, 5).map(m => `<tr><td>${esc(m.n)}</td><td class="num">${SAR2(m.price)}</td><td class="num">${SAR2(m.price * (i ? 1.08 : 1))}</td></tr>`).join('')}</table></div>`;
 };
 
 // ── Categories ────────────────────────────────────────────────
-PAGES.cats = () => `<div class="card"><h4>Categories <span class="note">${STATE.org.type} template</span></h4>
- <table><tr><th>Category</th><th class="num">Items</th><th></th></tr>
+PAGES.cats = () => `<div class="card"><h4>${L('Categories', 'التصنيفات')} <span class="note">${L(STATE.org.type + ' template', 'قالب ' + STATE.org.type)}</span></h4>
+ <table><tr><th>${L('Category', 'التصنيف')}</th><th class="num">${L('Items', 'الأصناف')}</th><th></th></tr>
  ${STATE.cats.map((c, i) => `<tr><td><input class="tbl-edit" style="width:220px;text-align:start" value="${esc(c)}" onchange="renameCat(${i},this.value)"></td><td class="num">${STATE.menu.filter(m => m.cat === c).length}</td>
-  <td><button class="btn btn-sm btn-danger" onclick="STATE.cats.splice(${i},1);render()">Remove</button></td></tr>`).join('')}</table>
- <div style="display:flex;gap:9px;margin-top:12px"><input class="tbl-edit" id="ncat" style="width:220px;text-align:start" placeholder="New category">
- <button class="btn btn-sm btn-line" onclick="if($('ncat').value.trim()){STATE.cats.push($('ncat').value.trim());render();toast('Category added')}">+ Add</button></div></div>`;
+  <td><button class="btn btn-sm btn-danger" onclick="STATE.cats.splice(${i},1);render()">${L('Remove', 'حذف')}</button></td></tr>`).join('')}</table>
+ <div style="display:flex;gap:9px;margin-top:12px"><input class="tbl-edit" id="ncat" style="width:220px;text-align:start" placeholder="${L('New category', 'تصنيف جديد')}">
+ <button class="btn btn-sm btn-line" onclick="if($('ncat').value.trim()){STATE.cats.push($('ncat').value.trim());render();toast(L('Category added','تمت إضافة التصنيف'))}">${L('+ Add', '+ إضافة')}</button></div></div>`;
 
 function renameCat(i, v) {
   v = v.trim(); if (!v) { render(); return; }
   const old = STATE.cats[i];
   STATE.cats[i] = v; STATE.menu.forEach(m => { if (m.cat === old) m.cat = v; });
-  render(); toast('Category renamed — ' + STATE.menu.filter(m => m.cat === v).length + ' item(s) updated');
+  render(); toast(L('Category renamed — ' + STATE.menu.filter(m => m.cat === v).length + ' item(s) updated', 'تمت إعادة تسمية التصنيف — حُدّث ' + STATE.menu.filter(m => m.cat === v).length + ' صنف'));
 }
 
 // ── Menu Items ────────────────────────────────────────────────
 PAGES.menu = () => {
   if (!STATE.menu.length) return emptyMenuState();
-  return `<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-navy btn-sm" onclick="addItemModal()">+ Add menu item</button></div>
-  <div class="card"><table><tr><th>Item</th><th>Category</th><th class="num">Price</th><th class="num">True cost</th><th class="num">Margin</th><th>Status</th><th></th></tr>
-  ${STATE.menu.map(m => `<tr><td><b>${esc(m.n)}</b><div class="note">${m.sold} sold/mo · ${Math.round(m.delShare * 100)}% via delivery</div></td><td>${esc(m.cat)}</td>
-   <td class="num"><input class="tbl-edit" type="number" value="${m.price}" onchange="m_(${q(m.id)}).price=+this.value;render();toast('Price updated — all margins recalculated')"></td>
+  return `<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-navy btn-sm" onclick="addItemModal()">${L('+ Add menu item', '+ إضافة صنف')}</button></div>
+  <div class="card"><table><tr><th>${L('Item', 'الصنف')}</th><th>${L('Category', 'التصنيف')}</th><th class="num">${L('Price', 'السعر')}</th><th class="num">${L('True cost', 'التكلفة الحقيقية')}</th><th class="num">${L('Margin', 'الهامش')}</th><th>${L('Status', 'الحالة')}</th><th></th></tr>
+  ${STATE.menu.map(m => `<tr><td><b>${esc(m.n)}</b><div class="note">${L(m.sold + ' sold/mo · ' + Math.round(m.delShare * 100) + '% via delivery', m.sold + ' مباع/شهر · ' + Math.round(m.delShare * 100) + '% عبر التوصيل')}</div></td><td>${esc(m.cat)}</td>
+   <td class="num"><input class="tbl-edit" type="number" value="${m.price}" onchange="m_(${q(m.id)}).price=+this.value;render();toast(L('Price updated — all margins recalculated','تم تحديث السعر — أُعيد حساب كل الهوامش'))"></td>
    <td class="num">${SAR2(cost(m))}</td><td class="num ${marginPct(m) < 20 ? 'down' : 'up'}">${pct(marginPct(m))}</td>
-   <td><span class="tag ${m.status === 'approved' ? 'ok' : 'warn'}">${m.status === 'approved' ? 'Active' : 'Recipe pending'}</span>${m.reprice ? ' <span class="tag bad">reprice</span>' : ''}</td>
-   <td style="white-space:nowrap"><button class="btn btn-sm btn-line" onclick="editItemModal(${q(m.id)})">Edit</button>
-   <button class="btn btn-sm btn-danger" onclick="STATE.menu=STATE.menu.filter(x=>x.id!==${q(m.id)});render();toast('Item removed','bad')">Remove</button></td></tr>`).join('')}</table></div>`;
+   <td><span class="tag ${m.status === 'approved' ? 'ok' : 'warn'}">${m.status === 'approved' ? L('Active', 'نشط') : L('Recipe pending', 'الوصفة معلّقة')}</span>${m.reprice ? ` <span class="tag bad">${L('reprice', 'إعادة تسعير')}</span>` : ''}</td>
+   <td style="white-space:nowrap"><button class="btn btn-sm btn-line" onclick="editItemModal(${q(m.id)})">${L('Edit', 'تعديل')}</button>
+   <button class="btn btn-sm btn-danger" onclick="STATE.menu=STATE.menu.filter(x=>x.id!==${q(m.id)});render();toast(L('Item removed','تم حذف الصنف'),'bad')">${L('Remove', 'حذف')}</button></td></tr>`).join('')}</table></div>`;
 };
 
 function editItemModal(id) {
   const m = m_(id); if (!m) return;
-  modal(`<h3>Edit — ${esc(m.n)}</h3>
-   <div class="field"><label>Name</label><input id="eiN" value="${esc(m.n)}"></div>
-   <div class="field"><label>Category</label><select id="eiC">${STATE.cats.map(c => `<option ${c === m.cat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-   <div class="field"><label>Description</label><textarea id="eiD" rows="2">${esc(m.desc || '')}</textarea></div>
+  modal(`<h3>${L('Edit — ', 'تعديل — ')}${esc(m.n)}</h3>
+   <div class="field"><label>${L('Name', 'الاسم')}</label><input id="eiN" value="${esc(m.n)}"></div>
+   <div class="field"><label>${L('Category', 'التصنيف')}</label><select id="eiC">${STATE.cats.map(c => `<option ${c === m.cat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+   <div class="field"><label>${L('Description', 'الوصف')}</label><textarea id="eiD" rows="2">${esc(m.desc || '')}</textarea></div>
    <div class="grid g2">
-    <div class="field"><label>Price (SAR)</label><input id="eiP" type="number" step="0.5" value="${m.price}"></div>
-    <div class="field"><label>Sold / month</label><input id="eiS" type="number" value="${m.sold}"></div>
-    <div class="field"><label>Delivery share %</label><input id="eiDel" type="number" value="${Math.round(m.delShare * 100)}"></div>
-    <div class="field"><label>Labor minutes</label><input id="eiL" type="number" step="0.5" value="${m.laborMin}"></div></div>
-   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">Cancel</button>
-   <button class="btn btn-gold" onclick="saveItemEdit(${q(m.id)})">Save changes</button></div>`);
+    <div class="field"><label>${L('Price (SAR)', 'السعر (ر.س)')}</label><input id="eiP" type="number" step="0.5" value="${m.price}"></div>
+    <div class="field"><label>${L('Sold / month', 'المباع / شهر')}</label><input id="eiS" type="number" value="${m.sold}"></div>
+    <div class="field"><label>${L('Delivery share %', 'حصة التوصيل %')}</label><input id="eiDel" type="number" value="${Math.round(m.delShare * 100)}"></div>
+    <div class="field"><label>${L('Labor minutes', 'دقائق العمالة')}</label><input id="eiL" type="number" step="0.5" value="${m.laborMin}"></div></div>
+   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">${L('Cancel', 'إلغاء')}</button>
+   <button class="btn btn-gold" onclick="saveItemEdit(${q(m.id)})">${L('Save changes', 'حفظ التغييرات')}</button></div>`);
 }
 function saveItemEdit(id) {
   const m = m_(id); if (!m) return;
-  const n = $('eiN').value.trim(); if (!n) { toast('Name required', 'bad'); return; }
+  const n = $('eiN').value.trim(); if (!n) { toast(L('Name required', 'الاسم مطلوب'), 'bad'); return; }
   m.n = n; m.cat = $('eiC').value; m.desc = $('eiD').value; m.price = +$('eiP').value || m.price;
   m.sold = Math.max(1, +$('eiS').value || m.sold); m.delShare = Math.max(0, Math.min(100, +$('eiDel').value)) / 100; m.laborMin = +$('eiL').value || m.laborMin;
-  closeModal(); render(); toast('Item updated — costs & margins recalculated');
+  closeModal(); render(); toast(L('Item updated — costs & margins recalculated', 'تم تحديث الصنف — أُعيد حساب التكاليف والهوامش'));
 }
 function addItemModal() {
-  modal(`<h3>Add menu item</h3>
-   <div class="field"><label>Name</label><input id="niN" placeholder="Grilled Seabass"></div>
-   <div class="field"><label>Category</label><select id="niC">${STATE.cats.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
-   <div class="grid g2"><div class="field"><label>Price (SAR)</label><input id="niP" type="number" value="59"></div>
-   <div class="field"><label>Estimated monthly sales</label><input id="niS" type="number" value="200"></div></div>
-   <div class="alert info"><span>✦</span><div>Recipe Intelligence will draft ingredients automatically from the item name.</div></div>
-   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">Cancel</button>
-   <button class="btn btn-gold" onclick="addItem()">Add & draft recipe</button></div>`);
+  modal(`<h3>${L('Add menu item', 'إضافة صنف للقائمة')}</h3>
+   <div class="field"><label>${L('Name', 'الاسم')}</label><input id="niN" placeholder="${L('Grilled Seabass', 'قاروص مشوي')}"></div>
+   <div class="field"><label>${L('Category', 'التصنيف')}</label><select id="niC">${STATE.cats.map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
+   <div class="grid g2"><div class="field"><label>${L('Price (SAR)', 'السعر (ر.س)')}</label><input id="niP" type="number" value="59"></div>
+   <div class="field"><label>${L('Estimated monthly sales', 'المبيعات الشهرية التقديرية')}</label><input id="niS" type="number" value="200"></div></div>
+   <div class="alert info"><span>✦</span><div>${L('Recipe Intelligence will draft ingredients automatically from the item name.', 'سيقوم ذكاء الوصفات بصياغة المكونات تلقائياً من اسم الصنف.')}</div></div>
+   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">${L('Cancel', 'إلغاء')}</button>
+   <button class="btn btn-gold" onclick="addItem()">${L('Add & draft recipe', 'إضافة وصياغة الوصفة')}</button></div>`);
 }
 function addItem() {
-  const n = $('niN').value.trim(); if (!n) { toast('Name required', 'bad'); return; }
+  const n = $('niN').value.trim(); if (!n) { toast(L('Name required', 'الاسم مطلوب'), 'bad'); return; }
   const recipe = suggestIngredients(n).map(([inN, qty]) => {
     let ig = STATE.ings.find(x => x.n === inN);
     if (!ig) { const pr = Math.round(10 + Math.random() * 35); ig = { id: uid(), n: inN, sup: STATE.sups[0]?.n || 'Unassigned', unit: qty < 8 ? 'pc' : 'kg', price: pr, yield: 0.92, est: true, hist: [{ d: 'now', p: pr }] }; STATE.ings.push(ig); }
     return [ig.id, qty];
   });
   STATE.menu.push({ id: uid(), n, cat: $('niC').value, price: +$('niP').value || 50, desc: '', recipe, laborMin: 6, pack: 1.5, sold: +$('niS').value || 100, delShare: .3, status: 'pending', reprice: false });
-  closeModal(); render(); toast('Item added — recipe drafted by Recipe Intelligence');
+  closeModal(); render(); toast(L('Item added — recipe drafted by Recipe Intelligence', 'تمت إضافة الصنف — صيغت الوصفة بواسطة ذكاء الوصفات'));
 }
 
 // ── Recipe Builder ────────────────────────────────────────────
 PAGES.recipe = () => {
   if (!STATE.menu.length) return emptyMenuState();
   const pend = STATE.menu.filter(m => m.status !== 'approved');
-  return `${pend.length ? `<div class="alert warn"><span>◆</span><div><b>${pend.length} recipe(s)</b> drafted by Recipe Intelligence are awaiting your approval.</div></div>` : ''}
+  return `${pend.length ? `<div class="alert warn"><span>◆</span><div><b>${L(pend.length + ' recipe(s)', pend.length + ' وصفة')}</b> ${L('drafted by Recipe Intelligence are awaiting your approval.', 'صاغها ذكاء الوصفات وتنتظر موافقتك.')}</div></div>` : ''}
   ${STATE.menu.map(m => recipeCard(m)).join('')}`;
 };
 
@@ -418,26 +430,26 @@ function updIngPrice(id, p) {
 
 // ── Suppliers ─────────────────────────────────────────────────
 PAGES.sup = () => `<div style="display:flex;justify-content:flex-end;margin-bottom:13px">
-   <button class="btn btn-navy btn-sm" onclick="supplierModal()">+ Add supplier</button></div>
+   <button class="btn btn-navy btn-sm" onclick="supplierModal()">${L('+ Add supplier', '+ إضافة مورّد')}</button></div>
  <div class="grid g2">${STATE.sups.length ? STATE.sups.map((sp, si) => {
   const items = STATE.ings.filter(i => i.sup === sp.n);
   const monthlySpend = Math.round(STATE.menu.reduce((a, m) => a + m.recipe.reduce((b, [id, qy]) => { const i = ingById(id); return i && i.sup === sp.n ? b + (i.unit === 'pc' ? qy * i.price : qy / 1000 * i.price) * m.sold : b; }, 0), 0));
   return `<div class="card"><h4>${esc(sp.n)} <span style="display:flex;gap:6px;align-items:center">
     <span class="tag info">★ ${sp.rating}</span>
-    <button class="btn btn-sm btn-line" onclick="supplierModal(${si})">Edit</button>
-    <button class="btn btn-sm btn-danger" onclick="delSupplier(${si})">Delete</button></span></h4>
+    <button class="btn btn-sm btn-line" onclick="supplierModal(${si})">${L('Edit', 'تعديل')}</button>
+    <button class="btn btn-sm btn-danger" onclick="delSupplier(${si})">${L('Delete', 'حذف')}</button></span></h4>
    <p class="note">${esc(sp.cat)}</p>
    <table>
-    <tr><td>Payment terms</td><td class="num">${esc(sp.terms)}</td></tr>
-    <tr><td>Delivery days</td><td class="num">${esc(sp.days)}</td></tr>
-    <tr><td>Items supplied</td><td class="num">${items.length}</td></tr>
-    <tr><td>Monthly spend (est.)</td><td class="num">${SAR(monthlySpend)}</td></tr>
+    <tr><td>${L('Payment terms', 'شروط الدفع')}</td><td class="num">${esc(sp.terms)}</td></tr>
+    <tr><td>${L('Delivery days', 'أيام التوريد')}</td><td class="num">${esc(sp.days)}</td></tr>
+    <tr><td>${L('Items supplied', 'الأصناف المورّدة')}</td><td class="num">${items.length}</td></tr>
+    <tr><td>${L('Monthly spend (est.)', 'الإنفاق الشهري (تقديري)')}</td><td class="num">${SAR(monthlySpend)}</td></tr>
    </table>
-   ${items.length ? `<table style="margin-top:10px"><tr><th>Item</th><th>Unit</th><th class="num">Qty/order</th><th class="num">Price (SAR)</th></tr>
+   ${items.length ? `<table style="margin-top:10px"><tr><th>${L('Item', 'الصنف')}</th><th>${L('Unit', 'الوحدة')}</th><th class="num">${L('Qty/order', 'الكمية/طلب')}</th><th class="num">${L('Price (SAR)', 'السعر (ر.س)')}</th></tr>
     ${items.map(i => `<tr><td>${esc(i.n)}</td><td>${esc(i.unit)}</td><td class="num">${i.orderQty ? fmt(i.orderQty) : '—'}</td><td class="num">${SAR2(i.price)}</td></tr>`).join('')}
-   </table>` : '<p class="note" style="margin-top:8px">No items linked yet — click Edit to add what you buy from this supplier.</p>'}
+   </table>` : `<p class="note" style="margin-top:8px">${L('No items linked yet — click Edit to add what you buy from this supplier.', 'لا توجد أصناف مرتبطة بعد — انقر تعديل لإضافة ما تشتريه من هذا المورّد.')}</p>`}
    </div>`;
-}).join('') : '<div class="card"><div class="empty"><div class="big">⛟</div><h5>No suppliers yet</h5><p>Add your first supplier.</p></div></div>'}</div>`;
+}).join('') : `<div class="card"><div class="empty"><div class="big">⛟</div><h5>${L('No suppliers yet', 'لا يوجد موردون بعد')}</h5><p>${L('Add your first supplier.', 'أضف أول مورّد.')}</p></div></div>`}</div>`;
 
 let _supDraftItems = [];
 function supplierModal(idx) {
@@ -445,27 +457,27 @@ function supplierModal(idx) {
   const sp = editing ? STATE.sups[idx] : { n: '', cat: '', terms: 'Net 15', days: '', rating: 4.5 };
   _supDraftItems = editing ? STATE.ings.filter(i => i.sup === sp.n).map(i => ({ id: i.id, n: i.n, unit: i.unit, orderQty: i.orderQty || 0, price: i.price })) : [];
   const idxAttr = editing ? idx : -1;
-  modal(`<h3>${editing ? 'Edit supplier' : 'Add supplier'}</h3>
+  modal(`<h3>${editing ? L('Edit supplier', 'تعديل المورّد') : L('Add supplier', 'إضافة مورّد')}</h3>
    <div class="grid g2">
-    <div class="field"><label>Name</label><input id="smN" value="${esc(sp.n)}" placeholder="Gulf Fresh Fish Co."></div>
-    <div class="field"><label>Category</label><input id="smC" value="${esc(sp.cat || '')}" placeholder="Fresh fish"></div>
-    <div class="field"><label>Payment terms</label><input id="smT" value="${esc(sp.terms || '')}" placeholder="Net 15"></div>
-    <div class="field"><label>Delivery days</label><input id="smD" value="${esc(sp.days || '')}" placeholder="Sat · Mon · Wed"></div>
+    <div class="field"><label>${L('Name', 'الاسم')}</label><input id="smN" value="${esc(sp.n)}" placeholder="${L('Gulf Fresh Fish Co.', 'شركة الخليج للأسماك الطازجة')}"></div>
+    <div class="field"><label>${L('Category', 'التصنيف')}</label><input id="smC" value="${esc(sp.cat || '')}" placeholder="${L('Fresh fish', 'أسماك طازجة')}"></div>
+    <div class="field"><label>${L('Payment terms', 'شروط الدفع')}</label><input id="smT" value="${esc(sp.terms || '')}" placeholder="Net 15"></div>
+    <div class="field"><label>${L('Delivery days', 'أيام التوريد')}</label><input id="smD" value="${esc(sp.days || '')}" placeholder="${L('Sat · Mon · Wed', 'سبت · إثنين · أربعاء')}"></div>
    </div>
-   <h4 style="margin:6px 0 8px">Items you buy from this supplier</h4>
+   <h4 style="margin:6px 0 8px">${L('Items you buy from this supplier', 'الأصناف التي تشتريها من هذا المورّد')}</h4>
    <div id="supItems"></div>
-   <button class="btn btn-sm btn-line" onclick="supAddItemRow()">+ Add item</button>
+   <button class="btn btn-sm btn-line" onclick="supAddItemRow()">${L('+ Add item', '+ إضافة صنف')}</button>
    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
-    <button class="btn btn-line" onclick="closeModal()">Cancel</button>
-    <button class="btn btn-gold" onclick="saveSupplier(${idxAttr})">${editing ? 'Save changes' : 'Add supplier'}</button>
+    <button class="btn btn-line" onclick="closeModal()">${L('Cancel', 'إلغاء')}</button>
+    <button class="btn btn-gold" onclick="saveSupplier(${idxAttr})">${editing ? L('Save changes', 'حفظ التغييرات') : L('Add supplier', 'إضافة مورّد')}</button>
    </div>`);
   renderSupItems();
 }
 function renderSupItems() {
   const host = $('supItems'); if (!host) return;
-  if (!_supDraftItems.length) { host.innerHTML = '<p class="note" style="padding:8px 0">No items yet. Click "+ Add item" to list what you buy.</p>'; return; }
+  if (!_supDraftItems.length) { host.innerHTML = `<p class="note" style="padding:8px 0">${L('No items yet. Click "+ Add item" to list what you buy.', 'لا توجد أصناف بعد. انقر "+ إضافة صنف" لإدراج ما تشتريه.')}</p>`; return; }
   host.innerHTML = `<table style="margin-bottom:10px">
-    <tr><th>Item name</th><th>Unit</th><th class="num">Qty / order</th><th class="num">Unit price (SAR)</th><th></th></tr>
+    <tr><th>${L('Item name', 'اسم الصنف')}</th><th>${L('Unit', 'الوحدة')}</th><th class="num">${L('Qty / order', 'الكمية / طلب')}</th><th class="num">${L('Unit price (SAR)', 'سعر الوحدة (ر.س)')}</th><th></th></tr>
     ${_supDraftItems.map((it, k) => `<tr>
       <td><input class="tbl-edit" style="width:170px;text-align:start" value="${esc(it.n)}" oninput="_supDraftItems[${k}].n=this.value" placeholder="Hamour fish"></td>
       <td><select class="tbl-edit" style="width:70px;text-align:start" onchange="_supDraftItems[${k}].unit=this.value">
@@ -480,11 +492,11 @@ function renderSupItems() {
 function supAddItemRow() { _supDraftItems.push({ id: null, n: '', unit: 'kg', orderQty: 0, price: 0 }); renderSupItems(); }
 function saveSupplier(idx) {
   const n = $('smN').value.trim();
-  if (!n) { toast('Supplier name required', 'bad'); return; }
+  if (!n) { toast(L('Supplier name required', 'اسم المورّد مطلوب'), 'bad'); return; }
   const editing = idx >= 0;
-  if (STATE.sups.some((x, i) => i !== idx && x.n.toLowerCase() === n.toLowerCase())) { toast('A supplier with that name already exists', 'bad'); return; }
+  if (STATE.sups.some((x, i) => i !== idx && x.n.toLowerCase() === n.toLowerCase())) { toast(L('A supplier with that name already exists', 'يوجد مورّد بهذا الاسم بالفعل'), 'bad'); return; }
   const valid = _supDraftItems.filter(it => (it.n || '').trim() && it.price > 0);
-  if (_supDraftItems.length && valid.length !== _supDraftItems.length) { toast('Each item row needs a name and a price > 0', 'bad'); return; }
+  if (_supDraftItems.length && valid.length !== _supDraftItems.length) { toast(L('Each item row needs a name and a price > 0', 'كل صف صنف يحتاج اسماً وسعراً أكبر من 0'), 'bad'); return; }
   const oldName = editing ? STATE.sups[idx].n : null;
   const supObj = { n, cat: $('smC').value.trim() || '—', terms: $('smT').value.trim() || '—', days: $('smD').value.trim() || '—', rating: editing ? STATE.sups[idx].rating : 4.5 };
   if (editing) { STATE.sups[idx] = supObj; if (oldName && oldName !== n) STATE.ings.forEach(i => { if (i.sup === oldName) i.sup = n; }); }
@@ -497,23 +509,23 @@ function saveSupplier(idx) {
       const oldPrice = ig.price; ig.n = name; ig.unit = it.unit; ig.sup = n; ig.orderQty = it.orderQty || 0;
       if (it.price && it.price !== oldPrice) {
         ig.price = it.price; ig.est = false; ig.hist = ig.hist || []; ig.hist.push({ d: 'sup', p: it.price }); if (ig.hist.length > 8) ig.hist.shift(); updated++;
-        if (oldPrice && it.price > oldPrice * 1.05) STATE.notifications.unshift({ t: 'Procurement Analyst', m: `${name} up ${pct((it.price / oldPrice - 1) * 100)} at ${n} — recipes recosted.`, k: 'bad', time: 'now' });
+        if (oldPrice && it.price > oldPrice * 1.05) STATE.notifications.unshift({ t: L('Procurement Analyst', 'محلل المشتريات'), m: L(`${name} up ${pct((it.price / oldPrice - 1) * 100)} at ${n} — recipes recosted.`, `${name} ارتفع ${pct((it.price / oldPrice - 1) * 100)} لدى ${n} — أُعيد حساب الوصفات.`), k: 'bad', time: 'now' });
         STATE.menu.forEach(m => { if (m.recipe.some(r => r[0] === ig.id)) recosted.add(m.n); });
       }
     } else { ig = { id: uid(), n: name, sup: n, unit: it.unit, price: it.price, yield: 1, orderQty: it.orderQty || 0, est: false, hist: [{ d: 'sup', p: it.price }] }; STATE.ings.push(ig); added++; }
   });
   closeModal(); render();
-  const parts = [editing ? 'Supplier updated' : 'Supplier added'];
-  if (added) parts.push(added + ' new item(s)');
-  if (updated) parts.push(updated + ' price(s) updated');
-  if (recosted.size) parts.push(recosted.size + ' recipe(s) recosted');
+  const parts = [editing ? L('Supplier updated', 'تم تحديث المورّد') : L('Supplier added', 'تمت إضافة المورّد')];
+  if (added) parts.push(L(added + ' new item(s)', added + ' صنف جديد'));
+  if (updated) parts.push(L(updated + ' price(s) updated', 'حُدّث ' + updated + ' سعر'));
+  if (recosted.size) parts.push(L(recosted.size + ' recipe(s) recosted', 'أُعيد حساب ' + recosted.size + ' وصفة'));
   toast(parts.join(' — '));
 }
 function delSupplier(si) {
   const sp = STATE.sups[si]; const moved = STATE.ings.filter(i => i.sup === sp.n).length;
   STATE.ings.forEach(i => { if (i.sup === sp.n) i.sup = 'Unassigned'; });
   STATE.sups.splice(si, 1); render();
-  toast(sp.n + ' deleted' + (moved ? ' — ' + moved + ' ingredient(s) moved to "Unassigned"' : ''), 'bad');
+  toast(L(sp.n + ' deleted' + (moved ? ' — ' + moved + ' ingredient(s) moved to "Unassigned"' : ''), 'تم حذف ' + sp.n + (moved ? ' — نُقل ' + moved + ' مكوّن إلى "غير مُعيّن"' : '')), 'bad');
 }
 
 // ── Procurement / Invoice Capture ─────────────────────────────
@@ -521,26 +533,26 @@ PAGES.proc = () => {
   if (!STATE.ings.length) return emptyMenuState();
   const changes = STATE.ings.filter(i => i.hist.length > 1).map(i => ({ i, ch: (i.hist.at(-1).p / i.hist[0].p - 1) * 100 })).sort((a, b) => b.ch - a.ch);
   const li = STATE.lastInv;
-  return `<div class="card" style="margin-bottom:13px"><h4>Invoice capture <span class="tag gold">MarginEdge-style · Agent E</span></h4>
-   <p class="note" style="margin-bottom:10px">Paste invoice lines — one per line as <b>ingredient name &nbsp;price</b>. The agent matches your ingredient database, updates purchase prices, <b>recosts every affected recipe instantly</b>, and raises alerts on increases over 5%.</p>
+  return `<div class="card" style="margin-bottom:13px"><h4>${L('Invoice capture', 'التقاط الفواتير')} <span class="tag gold">${L('MarginEdge-style · Agent E', 'الوكيل E')}</span></h4>
+   <p class="note" style="margin-bottom:10px">${L('Paste invoice lines — one per line as <b>ingredient name &nbsp;price</b>. The agent matches your ingredient database, updates purchase prices, <b>recosts every affected recipe instantly</b>, and raises alerts on increases over 5%.', 'الصق سطور الفاتورة — سطر لكل بند بصيغة <b>اسم المكوّن &nbsp;السعر</b>. يطابق الوكيل قاعدة مكوناتك، ويحدّث أسعار الشراء، و<b>يعيد حساب كل وصفة متأثرة فوراً</b>، ويرفع تنبيهات عند الزيادات فوق 5%.')}</p>
    <div class="field"><textarea id="invTxt" rows="5" placeholder="Hamour fish  64.5&#10;Shrimp peeled  61&#10;Olive oil  25"></textarea></div>
-   <button class="btn btn-navy btn-sm" onclick="applyInvoice()">▶ Process invoice</button>
+   <button class="btn btn-navy btn-sm" onclick="applyInvoice()">${L('▶ Process invoice', '▶ معالجة الفاتورة')}</button>
    ${li ? `<div style="margin-top:12px">
-     ${li.matched.length ? `<div class="alert good"><span>✓</span><div><b>${li.matched.length} line(s) matched & applied:</b> ${li.matched.map(x => esc(x.n) + ' → SAR ' + x.p + (x.delta > 5 ? ' (▲+' + x.delta.toFixed(1) + '%)' : '')).join(' · ')}. All recipes recosted.</div></div>` : ''}
-     ${li.unmatched.length ? `<div class="alert warn"><span>◆</span><div><b>${li.unmatched.length} unmatched:</b> ${li.unmatched.map(esc).join(' · ')} — add them in the Ingredient Center, then re-process.</div></div>` : ''}
+     ${li.matched.length ? `<div class="alert good"><span>✓</span><div><b>${L(li.matched.length + ' line(s) matched & applied:', 'طُوبق وطُبّق ' + li.matched.length + ' سطر:')}</b> ${li.matched.map(x => esc(x.n) + ' → ' + SAR2(x.p) + (x.delta > 5 ? ' (▲+' + x.delta.toFixed(1) + '%)' : '')).join(' · ')}. ${L('All recipes recosted.', 'أُعيد حساب كل الوصفات.')}</div></div>` : ''}
+     ${li.unmatched.length ? `<div class="alert warn"><span>◆</span><div><b>${L(li.unmatched.length + ' unmatched:', li.unmatched.length + ' غير مطابق:')}</b> ${li.unmatched.map(esc).join(' · ')} — ${L('add them in the Ingredient Center, then re-process.', 'أضفها في مركز المكونات، ثم أعد المعالجة.')}</div></div>` : ''}
    </div>` : ''}
   </div>
   <div class="grid g2">
-  <div class="card"><h4>Record a single price</h4>
-   <div class="field"><label>Ingredient</label><select id="prIng">${STATE.ings.map(i => `<option value="${i.id}">${esc(i.n)} — now SAR ${i.price}/${i.unit}</option>`).join('')}</select></div>
-   <div class="field"><label>New quoted price (SAR)</label><input id="prP" type="number" step="0.5"></div>
-   <button class="btn btn-line btn-sm" onclick="if(+$('prP').value){updIngPrice($('prIng').value,+$('prP').value)}else toast('Enter a price','bad')">Record price</button>
-   <h4 style="margin-top:18px">Cheaper alternative suggestions</h4>
-   ${changes.filter(x => x.ch > 4).slice(0, 3).map(x => `<div class="alert warn"><span>◆</span><div><b>${esc(x.i.n)}</b> trending +${pct(x.ch)} at ${esc(x.i.sup)}. ${STATE.sups.filter(sx => sx.n !== x.i.sup && sx.n !== 'In-house prep').slice(0, 1).map(sx => `Ask <b>${esc(sx.n)}</b> for a quote.`).join('') || 'Request quotes from alternative suppliers.'}</div></div>`).join('') || '<p class="note">No rising-price ingredients right now.</p>'}
+  <div class="card"><h4>${L('Record a single price', 'تسجيل سعر مفرد')}</h4>
+   <div class="field"><label>${L('Ingredient', 'المكوّن')}</label><select id="prIng">${STATE.ings.map(i => `<option value="${i.id}">${esc(i.n)} — ${L('now', 'الآن')} ${SAR2(i.price)}/${i.unit}</option>`).join('')}</select></div>
+   <div class="field"><label>${L('New quoted price (SAR)', 'السعر الجديد المعروض (ر.س)')}</label><input id="prP" type="number" step="0.5"></div>
+   <button class="btn btn-line btn-sm" onclick="if(+$('prP').value){updIngPrice($('prIng').value,+$('prP').value)}else toast(L('Enter a price','أدخل سعراً'),'bad')">${L('Record price', 'تسجيل السعر')}</button>
+   <h4 style="margin-top:18px">${L('Cheaper alternative suggestions', 'اقتراحات بدائل أرخص')}</h4>
+   ${changes.filter(x => x.ch > 4).slice(0, 3).map(x => `<div class="alert warn"><span>◆</span><div><b>${esc(x.i.n)}</b> ${L('trending +', 'يرتفع +')}${pct(x.ch)} ${L('at', 'لدى')} ${esc(x.i.sup)}. ${STATE.sups.filter(sx => sx.n !== x.i.sup && sx.n !== 'In-house prep').slice(0, 1).map(sx => L(`Ask <b>${esc(sx.n)}</b> for a quote.`, `اطلب عرض سعر من <b>${esc(sx.n)}</b>.`)).join('') || L('Request quotes from alternative suppliers.', 'اطلب عروض أسعار من موردين بدلاء.')}</div></div>`).join('') || `<p class="note">${L('No rising-price ingredients right now.', 'لا توجد مكونات مرتفعة السعر حالياً.')}</p>`}
   </div>
-  <div class="card"><h4>Price change log</h4>
-   <table><tr><th>Ingredient</th><th>Supplier</th><th class="num">Change</th><th>Trend</th></tr>
-   ${changes.slice(0, 12).map(x => `<tr><td>${esc(x.i.n)}${x.i.est ? ' <span class="tag warn">estimate</span>' : ''}</td><td class="note">${esc(x.i.sup)}</td><td class="num ${x.ch > 0 ? 'down' : 'up'}">${x.ch > 0 ? '+' : ''}${pct(x.ch)}</td><td>${spark(x.i.hist)}</td></tr>`).join('') || '<tr><td colspan="4" class="note">No price history yet — process an invoice to start tracking.</td></tr>'}</table></div></div>`;
+  <div class="card"><h4>${L('Price change log', 'سجل تغيّر الأسعار')}</h4>
+   <table><tr><th>${L('Ingredient', 'المكوّن')}</th><th>${L('Supplier', 'المورّد')}</th><th class="num">${L('Change', 'التغيّر')}</th><th>${L('Trend', 'الاتجاه')}</th></tr>
+   ${changes.slice(0, 12).map(x => `<tr><td>${esc(x.i.n)}${x.i.est ? ` <span class="tag warn">${L('estimate', 'تقدير')}</span>` : ''}</td><td class="note">${esc(x.i.sup)}</td><td class="num ${x.ch > 0 ? 'down' : 'up'}">${x.ch > 0 ? '+' : ''}${pct(x.ch)}</td><td>${spark(x.i.hist)}</td></tr>`).join('') || `<tr><td colspan="4" class="note">${L('No price history yet — process an invoice to start tracking.', 'لا يوجد سجل أسعار بعد — عالج فاتورة لبدء التتبع.')}</td></tr>`}</table></div></div>`;
 };
 
 function invMatchProc(text) {
@@ -556,75 +568,75 @@ function invMatchProc(text) {
 }
 function applyInvoice() {
   const txt = ($('invTxt') && $('invTxt').value) || '';
-  if (txt.trim().length < 3) { toast('Paste invoice lines first', 'bad'); return; }
+  if (txt.trim().length < 3) { toast(L('Paste invoice lines first', 'الصق سطور الفاتورة أولاً'), 'bad'); return; }
   const r = invMatchProc(txt);
-  if (!r.matched.length && !r.unmatched.length) { toast('No "name + price" lines detected', 'bad'); return; }
+  if (!r.matched.length && !r.unmatched.length) { toast(L('No "name + price" lines detected', 'لم تُكتشف سطور "اسم + سعر"'), 'bad'); return; }
   r.matched.forEach(x => {
     const i = STATE.ings.find(g => g.id === x.id); const old = i.price;
     i.price = x.p; i.est = false; i.hist.push({ d: 'inv', p: x.p }); if (i.hist.length > 8) i.hist.shift();
-    if (x.p > old * 1.05) STATE.notifications.unshift({ t: 'Procurement Analyst', m: i.n + ' up ' + pct((x.p / old - 1) * 100) + ' on latest invoice — recipes recosted.', k: 'bad', time: 'now' });
+    if (x.p > old * 1.05) STATE.notifications.unshift({ t: L('Procurement Analyst', 'محلل المشتريات'), m: L(i.n + ' up ' + pct((x.p / old - 1) * 100) + ' on latest invoice — recipes recosted.', i.n + ' ارتفع ' + pct((x.p / old - 1) * 100) + ' في آخر فاتورة — أُعيد حساب الوصفات.'), k: 'bad', time: 'now' });
   });
   STATE.lastInv = r; render();
-  toast(r.matched.length + ' price(s) applied — every affected recipe recosted' + (r.unmatched.length ? ' · ' + r.unmatched.length + ' unmatched' : ''));
+  toast(L(r.matched.length + ' price(s) applied — every affected recipe recosted' + (r.unmatched.length ? ' · ' + r.unmatched.length + ' unmatched' : ''), 'طُبّق ' + r.matched.length + ' سعر — أُعيد حساب كل وصفة متأثرة' + (r.unmatched.length ? ' · ' + r.unmatched.length + ' غير مطابق' : '')));
 }
 
 // ── Inventory Variance ────────────────────────────────────────
 PAGES.inv = () => {
   if (!STATE.ings.length) return emptyMenuState();
-  return `<div class="card"><h4>Inventory variance <span class="note">opening + purchases − consumption = expected closing; variance vs counted</span></h4>
-  <table><tr><th>Ingredient</th><th class="num">Opening</th><th class="num">Purchases</th><th class="num">Consumed (recipes)</th><th class="num">Expected close</th><th class="num">Counted</th><th class="num">Variance</th></tr>
+  return `<div class="card"><h4>${L('Inventory variance', 'فروقات المخزون')} <span class="note">${L('opening + purchases − consumption = expected closing; variance vs counted', 'الافتتاحي + المشتريات − الاستهلاك = الختامي المتوقع؛ الفرق مقابل المعدود')}</span></h4>
+  <table><tr><th>${L('Ingredient', 'المكوّن')}</th><th class="num">${L('Opening', 'افتتاحي')}</th><th class="num">${L('Purchases', 'مشتريات')}</th><th class="num">${L('Consumed (recipes)', 'مستهلك (وصفات)')}</th><th class="num">${L('Expected close', 'الختامي المتوقع')}</th><th class="num">${L('Counted', 'المعدود')}</th><th class="num">${L('Variance', 'الفرق')}</th></tr>
   ${STATE.ings.slice(0, 10).map((i, k) => {
     const cons = STATE.menu.reduce((a, m) => a + m.recipe.reduce((b, [id, qy]) => id === i.id ? b + (i.unit === 'pc' ? qy : qy / 1000) * m.sold : b, 0), 0);
     const op = cons * 0.3, pur = cons * 1.05, exp = op + pur - cons, cnt = exp * (k % 4 === 0 ? 0.93 : 0.99), va = (cnt - exp) / (exp || 1) * 100;
     return `<tr><td>${esc(i.n)}</td><td class="num">${op.toFixed(0)}</td><td class="num">${pur.toFixed(0)}</td><td class="num">${cons.toFixed(0)}</td><td class="num">${exp.toFixed(0)}</td><td class="num">${cnt.toFixed(0)}</td><td class="num ${va < -3 ? 'down' : ''}">${va.toFixed(1)}%</td></tr>`;
   }).join('')}</table>
-  <p class="note" style="margin-top:9px">Units: kg (or pc). Variance beyond −3% feeds the Shrinkage line in Hidden Costs.</p></div>`;
+  <p class="note" style="margin-top:9px">${L('Units: kg (or pc). Variance beyond −3% feeds the Shrinkage line in Hidden Costs.', 'الوحدات: كجم (أو قطعة). الفرق الذي يتجاوز −3% يغذّي بند الهدر في التكاليف الخفية.')}</p></div>`;
 };
 
 // ── Employees ─────────────────────────────────────────────────
 PAGES.emp = () => {
   const tot = laborPool();
-  return `<div class="grid g3">${kpi('Headcount', STATE.emps.length)}${kpi('True monthly cost', SAR(Math.round(tot)))}
-  ${kpi('Avg multiplier', (STATE.emps.length ? (tot / STATE.emps.reduce((a, e) => a + e.basic, 0)) : 0).toFixed(2) + '×', 'of basic salary')}</div>
-  <div class="card" style="margin-top:13px"><h4>Employee Cost Engine <span class="note">edit basic salary — labor cost per dish recalculates</span></h4>
-  ${STATE.emps.length ? `<table><tr><th>Employee</th><th class="num">Basic</th><th class="num">Housing+Trans+Food</th><th class="num">GOSI</th><th class="num">Visa/Iqama/Med/Recruit</th><th class="num">True cost</th><th></th></tr>
-  ${STATE.emps.map(e => `<tr><td>${esc(e.n)}<div class="note">${esc(e.pos)} · ${e.saudi ? 'Saudi' : 'Expat'} · GOSI ${(e.gosi * 100).toFixed(2)}%</div></td>
-   <td class="num"><input class="tbl-edit" type="number" value="${e.basic}" onchange="STATE.emps.find(x=>x.id===${q(e.id)}).basic=+this.value;render();toast('Labor rate recalculated')"></td>
+  return `<div class="grid g3">${kpi(L('Headcount', 'عدد الموظفين'), STATE.emps.length)}${kpi(L('True monthly cost', 'التكلفة الشهرية الحقيقية'), SAR(Math.round(tot)))}
+  ${kpi(L('Avg multiplier', 'المضاعف المتوسط'), (STATE.emps.length ? (tot / STATE.emps.reduce((a, e) => a + e.basic, 0)) : 0).toFixed(2) + '×', L('of basic salary', 'من الراتب الأساسي'))}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Employee Cost Engine', 'محرّك تكلفة الموظفين')} <span class="note">${L('edit basic salary — labor cost per dish recalculates', 'عدّل الراتب الأساسي — تُعاد حساب تكلفة العمالة لكل صنف')}</span></h4>
+  ${STATE.emps.length ? `<table><tr><th>${L('Employee', 'الموظف')}</th><th class="num">${L('Basic', 'الأساسي')}</th><th class="num">${L('Housing+Trans+Food', 'سكن+نقل+طعام')}</th><th class="num">${L('GOSI', 'التأمينات')}</th><th class="num">${L('Visa/Iqama/Med/Recruit', 'تأشيرة/إقامة/طبي/توظيف')}</th><th class="num">${L('True cost', 'التكلفة الحقيقية')}</th><th></th></tr>
+  ${STATE.emps.map(e => `<tr><td>${esc(e.n)}<div class="note">${esc(e.pos)} · ${e.saudi ? L('Saudi', 'سعودي') : L('Expat', 'وافد')} · ${L('GOSI', 'التأمينات')} ${(e.gosi * 100).toFixed(2)}%</div></td>
+   <td class="num"><input class="tbl-edit" type="number" value="${e.basic}" onchange="STATE.emps.find(x=>x.id===${q(e.id)}).basic=+this.value;render();toast(L('Labor rate recalculated','أُعيد حساب معدّل العمالة'))"></td>
    <td class="num">${fmt(e.hous + e.trans + e.food)}</td><td class="num">${fmt(Math.round(e.basic * e.gosi))}</td>
    <td class="num">${fmt(e.visa + e.iqama + e.med + e.recr)}</td><td class="num"><b>${fmt(Math.round(empMonthly(e)))}</b></td>
    <td><button class="btn btn-sm btn-danger" onclick="STATE.emps=STATE.emps.filter(x=>x.id!==${q(e.id)});render()">✕</button></td></tr>`).join('')}</table>`
-    : '<div class="empty"><div class="big">⬢</div><h5>No employees</h5><p>Add staff in onboarding step 7.</p></div>'}
-  <p class="note" style="margin-top:9px">Direct labor per dish = station minutes × blended true cost per minute (${STATE.menu.length ? ('SAR ' + laborRate().toFixed(2) + '/min') : '—'}), allocating 100% of payroll across actual plates sold.</p></div>`;
+    : `<div class="empty"><div class="big">⬢</div><h5>${L('No employees', 'لا يوجد موظفون')}</h5><p>${L('Add staff in onboarding step 7.', 'أضف الموظفين في الخطوة 7 من الإعداد.')}</p></div>`}
+  <p class="note" style="margin-top:9px">${L('Direct labor per dish = station minutes × blended true cost per minute', 'العمالة المباشرة لكل صنف = دقائق المحطة × التكلفة الحقيقية المدمجة للدقيقة')} (${STATE.menu.length ? (L('SAR ', '') + laborRate().toFixed(2) + L('/min', ' ر.س/دقيقة')) : '—'})${L(', allocating 100% of payroll across actual plates sold.', '، بتوزيع 100% من الرواتب على الأطباق المباعة فعلياً.')}</p></div>`;
 };
 
 // ── Government Fees ───────────────────────────────────────────
 PAGES.gov = () => {
   const tot = STATE.gov.reduce((a, g) => a + g.amt, 0);
-  return `<div class="grid g3">${kpi('Tracked fees', STATE.gov.length + ' items', 'all editable')}
-  ${kpi('Monthly allocation', SAR(Math.round(govMonthly())), 'incl. per-employee fees')}
-  ${kpi('Avg per dish', STATE.menu.length ? SAR2(govMonthly() / totalUnits()) : '—', 'revenue-share allocation')}</div>
-  <div class="card" style="margin-top:13px"><h4>Saudi Compliance Cost Agent <span class="tag gold">Agent G</span> <span class="note">amounts change — edit them and every dish recosts</span></h4>
-  <table><tr><th>Fee</th><th>Authority</th><th class="num">Amount (SAR)</th><th>Cycle</th></tr>
+  return `<div class="grid g3">${kpi(L('Tracked fees', 'الرسوم المتتبَّعة'), STATE.gov.length + L(' items', ' بند'), L('all editable', 'كلها قابلة للتعديل'))}
+  ${kpi(L('Monthly allocation', 'التوزيع الشهري'), SAR(Math.round(govMonthly())), L('incl. per-employee fees', 'شاملاً رسوم كل موظف'))}
+  ${kpi(L('Avg per dish', 'المتوسط لكل صنف'), STATE.menu.length ? SAR2(govMonthly() / totalUnits()) : '—', L('revenue-share allocation', 'توزيع حسب حصة الإيرادات'))}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Saudi Compliance Cost Agent', 'وكيل تكاليف الامتثال السعودي')} <span class="tag gold">${L('Agent G', 'الوكيل G')}</span> <span class="note">${L('amounts change — edit them and every dish recosts', 'المبالغ تتغير — عدّلها ليُعاد حساب كل صنف')}</span></h4>
+  <table><tr><th>${L('Fee', 'الرسم')}</th><th>${L('Authority', 'الجهة')}</th><th class="num">${L('Amount (SAR)', 'المبلغ (ر.س)')}</th><th>${L('Cycle', 'الدورة')}</th></tr>
   ${STATE.gov.map(g => `<tr><td>${esc(g.n)}</td><td class="note">${esc(g.auth)}</td>
-   <td class="num"><input class="tbl-edit" type="number" value="${g.amt}" onchange="g_(${q(g.id)}).amt=+this.value;render();toast('Government allocation updated across all dishes')"></td>
+   <td class="num"><input class="tbl-edit" type="number" value="${g.amt}" onchange="g_(${q(g.id)}).amt=+this.value;render();toast(L('Government allocation updated across all dishes','تم تحديث التوزيع الحكومي على كل الأصناف'))"></td>
    <td class="note">${esc(g.cycle)}</td></tr>`).join('')}</table>
-  <p class="note" style="margin-top:9px">GOSI employer share is computed in the Employee Cost Engine to avoid double counting.</p></div>`;
+  <p class="note" style="margin-top:9px">${L('GOSI employer share is computed in the Employee Cost Engine to avoid double counting.', 'حصة صاحب العمل في التأمينات تُحتسب في محرّك تكلفة الموظفين لتجنّب الاحتساب المزدوج.')}</p></div>`;
 };
 
 // ── Hidden Costs ──────────────────────────────────────────────
 PAGES.hidden = () => {
   const grps = [...new Set(STATE.hidden.map(h => h.grp))];
-  return `<div class="grid g3">${kpi('Hidden costs / month', SAR(hiddenMonthly()))}${kpi('Largest group', grps.sort((a, b) => hiddenGroup(b) - hiddenGroup(a))[0] || '—')}${kpi('Avg per dish', STATE.menu.length ? SAR2(hiddenMonthly() / totalUnits()) : '—')}</div>
-  ${grps.map(g => `<div class="card" style="margin-top:13px"><h4>${g} <span class="note">${SAR(hiddenGroup(g))}/mo${g === 'Marketing' ? ' · manage in Marketing Costs page' : ''}</span></h4>
+  return `<div class="grid g3">${kpi(L('Hidden costs / month', 'التكاليف الخفية / شهر'), SAR(hiddenMonthly()))}${kpi(L('Largest group', 'أكبر مجموعة'), groupD(grps.sort((a, b) => hiddenGroup(b) - hiddenGroup(a))[0]) || '—')}${kpi(L('Avg per dish', 'المتوسط لكل صنف'), STATE.menu.length ? SAR2(hiddenMonthly() / totalUnits()) : '—')}</div>
+  ${grps.map(g => `<div class="card" style="margin-top:13px"><h4>${groupD(g)} <span class="note">${SAR(hiddenGroup(g))}${L('/mo', '/شهر')}${g === 'Marketing' ? L(' · manage in Marketing Costs page', ' · تُدار في صفحة التسويق') : ''}</span></h4>
   <table>${STATE.hidden.filter(h => h.grp === g).map(h => `<tr><td>${esc(h.n)}</td>
    <td class="num"><input class="tbl-edit" type="number" value="${h.amt}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).amt=+this.value;render()"></td>
-   <td style="width:46px"><button class="btn btn-sm btn-danger" onclick="STATE.hidden=STATE.hidden.filter(x=>x.id!==${q(h.id)});render();toast('Cost line removed','bad')">✕</button></td></tr>`).join('')}</table></div>`).join('')}
-  <div class="card" style="margin-top:13px"><h4>Add hidden cost line</h4>
+   <td style="width:46px"><button class="btn btn-sm btn-danger" onclick="STATE.hidden=STATE.hidden.filter(x=>x.id!==${q(h.id)});render();toast(L('Cost line removed','تم حذف بند التكلفة'),'bad')">✕</button></td></tr>`).join('')}</table></div>`).join('')}
+  <div class="card" style="margin-top:13px"><h4>${L('Add hidden cost line', 'إضافة بند تكلفة خفية')}</h4>
    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <input class="tbl-edit" id="hcN" style="width:220px;text-align:start" placeholder="e.g. Grease trap cleaning">
-    <select class="tbl-edit" id="hcG" style="width:140px;text-align:start">${['Operations', 'Utilities', 'Technology', 'Marketing', 'Finance', 'Shrinkage'].map(g => `<option>${g}</option>`).join('')}</select>
-    <input class="tbl-edit" id="hcA" type="number" placeholder="SAR/mo" style="width:100px">
-    <button class="btn btn-sm btn-navy" onclick="if(!$('hcN').value.trim()||!+$('hcA').value){toast('Name and amount required','bad')}else{STATE.hidden.push({id:uid(),n:$('hcN').value.trim(),grp:$('hcG').value,amt:+$('hcA').value});render();toast('Cost line added')}">+ Add</button></div></div>`;
+    <input class="tbl-edit" id="hcN" style="width:220px;text-align:start" placeholder="${L('e.g. Grease trap cleaning', 'مثال: تنظيف مصيدة الشحوم')}">
+    <select class="tbl-edit" id="hcG" style="width:140px;text-align:start">${['Operations', 'Utilities', 'Technology', 'Marketing', 'Finance', 'Shrinkage'].map(g => `<option value="${g}">${groupD(g)}</option>`).join('')}</select>
+    <input class="tbl-edit" id="hcA" type="number" placeholder="${L('SAR/mo', 'ر.س/شهر')}" style="width:100px">
+    <button class="btn btn-sm btn-navy" onclick="if(!$('hcN').value.trim()||!+$('hcA').value){toast(L('Name and amount required','الاسم والمبلغ مطلوبان'),'bad')}else{STATE.hidden.push({id:uid(),n:$('hcN').value.trim(),grp:$('hcG').value,amt:+$('hcA').value});render();toast(L('Cost line added','تمت إضافة بند التكلفة'))}">${L('+ Add', '+ إضافة')}</button></div></div>`;
 };
 
 // ── Marketing & Packaging ─────────────────────────────────────
@@ -682,8 +694,8 @@ function setAllPackaging() {
 PAGES.apps = () => {
   if (!STATE.menu.length) return emptyMenuState();
   const m = [...STATE.menu].sort((a, b) => b.sold * b.delShare - a.sold * a.delShare)[0];
-  return `<div class="card"><h4>Platform settings <span class="note">edit % — the blended rate feeds every item's delivery layer</span></h4>
-  <table><tr><th>Platform</th><th class="num">Commission %</th><th class="num">Marketing %</th><th class="num">Order share %</th><th class="num">Net margin on ${esc(m.n)}</th><th></th></tr>
+  return `<div class="card"><h4>${L('Platform settings', 'إعدادات المنصات')} <span class="note">${L('edit % — the blended rate feeds every item delivery layer', 'عدّل النسب — المعدّل المدمج يغذّي طبقة التوصيل لكل صنف')}</span></h4>
+  <table><tr><th>${L('Platform', 'المنصة')}</th><th class="num">${L('Commission %', 'العمولة %')}</th><th class="num">${L('Marketing %', 'التسويق %')}</th><th class="num">${L('Order share %', 'حصة الطلبات %')}</th><th class="num">${L('Net margin on ', 'الهامش الصافي على ')}${esc(m.n)}</th><th></th></tr>
   ${STATE.apps.map((a, i) => {
     const fee = (a.comm + a.mkt) / 100;
     const direct = m.price - (ingCost(m) + m.pack + m.laborMin * laborRate() + ingCost(m) * 0.04);
@@ -693,29 +705,29 @@ PAGES.apps = () => {
     <td class="num"><input class="tbl-edit" type="number" value="${a.mkt}" onchange="STATE.apps[${i}].mkt=+this.value;render()"></td>
     <td class="num"><input class="tbl-edit" type="number" value="${a.share}" onchange="STATE.apps[${i}].share=+this.value;render()"></td>
     <td class="num ${net < 25 ? 'down' : 'up'}">${pct(net)}</td>
-    <td style="width:46px"><button class="btn btn-sm btn-danger" onclick="STATE.apps.splice(${i},1);render();toast('Platform removed — blended rate updated','bad')">✕</button></td></tr>`;
+    <td style="width:46px"><button class="btn btn-sm btn-danger" onclick="STATE.apps.splice(${i},1);render();toast(L('Platform removed — blended rate updated','تم حذف المنصة — حُدّث المعدّل المدمج'),'bad')">✕</button></td></tr>`;
   }).join('')}</table>
   <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
-   <input class="tbl-edit" id="apN" style="width:160px;text-align:start" placeholder="Platform name">
-   <input class="tbl-edit" id="apC" type="number" placeholder="Comm %" style="width:90px">
-   <input class="tbl-edit" id="apM" type="number" placeholder="Mktg %" style="width:90px">
-   <input class="tbl-edit" id="apS" type="number" placeholder="Share %" style="width:90px">
-   <button class="btn btn-sm btn-navy" onclick="if(!$('apN').value.trim()){toast('Platform name required','bad')}else{STATE.apps.push({n:$('apN').value.trim(),comm:+$('apC').value||20,mkt:+$('apM').value||0,share:+$('apS').value||10});render();toast('Platform added — blended rate updated')}">+ Add platform</button></div>
-  <div class="alert warn" style="margin-top:12px"><span>◆</span><div>Blended platform cost: <b>${pct(blendedAppRate() * 100)}</b> of delivery revenue. Items with delivery net margin < 25% should use a delivery-specific price.</div></div></div>`;
+   <input class="tbl-edit" id="apN" style="width:160px;text-align:start" placeholder="${L('Platform name', 'اسم المنصة')}">
+   <input class="tbl-edit" id="apC" type="number" placeholder="${L('Comm %', 'عمولة %')}" style="width:90px">
+   <input class="tbl-edit" id="apM" type="number" placeholder="${L('Mktg %', 'تسويق %')}" style="width:90px">
+   <input class="tbl-edit" id="apS" type="number" placeholder="${L('Share %', 'حصة %')}" style="width:90px">
+   <button class="btn btn-sm btn-navy" onclick="if(!$('apN').value.trim()){toast(L('Platform name required','اسم المنصة مطلوب'),'bad')}else{STATE.apps.push({n:$('apN').value.trim(),comm:+$('apC').value||20,mkt:+$('apM').value||0,share:+$('apS').value||10});render();toast(L('Platform added — blended rate updated','تمت إضافة المنصة — حُدّث المعدّل المدمج'))}">${L('+ Add platform', '+ إضافة منصة')}</button></div>
+  <div class="alert warn" style="margin-top:12px"><span>◆</span><div>${L('Blended platform cost:', 'تكلفة المنصات المدمجة:')} <b>${pct(blendedAppRate() * 100)}</b> ${L('of delivery revenue. Items with delivery net margin < 25% should use a delivery-specific price.', 'من إيرادات التوصيل. الأصناف التي هامش توصيلها الصافي أقل من 25% يُفضّل أن تستخدم سعراً خاصاً بالتوصيل.')}</div></div></div>`;
 };
 
 // ── Cost Allocation ───────────────────────────────────────────
 PAGES.alloc = () => {
   if (!STATE.menu.length) return emptyMenuState();
   const U = totalUnits();
-  const pools = [['Rent', STATE.rent], ['Government fees', govMonthly()], ['Utilities (incl. elec/water out of rent)', hiddenGroup('Utilities') + utilMonthly()], ['Extra fees & fines', xfeesMonthly()], ['Technology', hiddenGroup('Technology')], ['Marketing', hiddenGroup('Marketing')], ['Operations & finance', hiddenGroup('Operations') + hiddenGroup('Finance')], ['Shrinkage & waste', hiddenGroup('Shrinkage')]];
+  const pools = [[L('Rent', 'الإيجار'), STATE.rent], [L('Government fees', 'الرسوم الحكومية'), govMonthly()], [L('Utilities (incl. elec/water out of rent)', 'المرافق (شاملاً كهرباء/ماء خارج الإيجار)'), hiddenGroup('Utilities') + utilMonthly()], [L('Extra fees & fines', 'رسوم وغرامات إضافية'), xfeesMonthly()], [L('Technology', 'التقنية'), hiddenGroup('Technology')], [L('Marketing', 'التسويق'), hiddenGroup('Marketing')], [L('Operations & finance', 'العمليات والمالية'), hiddenGroup('Operations') + hiddenGroup('Finance')], [L('Shrinkage & waste', 'الهدر والفاقد'), hiddenGroup('Shrinkage')]];
   const mx = Math.max(...pools.map(p => p[1]));
-  return `<div class="card"><h4>Cost allocation method</h4>
-  <p class="note" style="margin-bottom:12px">Overhead pools allocate by <b>revenue share</b>. Labor allocates by station minutes; delivery by each item's delivery share × blended platform rate; ingredient waste at ${STATE.wastePct ?? 4}% of materials.</p>
-  <table><tr><th>Pool</th><th class="num">Monthly (SAR)</th><th style="width:38%"></th><th class="num">Avg / dish</th></tr>
+  return `<div class="card"><h4>${L('Cost allocation method', 'طريقة توزيع التكاليف')}</h4>
+  <p class="note" style="margin-bottom:12px">${L('Overhead pools allocate by <b>revenue share</b>. Labor allocates by station minutes; delivery by each item delivery share × blended platform rate; ingredient waste at ', 'مجمعات المصاريف تُوزّع حسب <b>حصة الإيرادات</b>. العمالة حسب دقائق المحطة؛ والتوصيل حسب حصة توصيل كل صنف × معدّل المنصات المدمج؛ وهدر المكونات بنسبة ')}${STATE.wastePct ?? 4}${L('% of materials.', '% من المواد.')}</p>
+  <table><tr><th>${L('Pool', 'المجمع')}</th><th class="num">${L('Monthly (SAR)', 'شهري (ر.س)')}</th><th style="width:38%"></th><th class="num">${L('Avg / dish', 'المتوسط / صنف')}</th></tr>
   ${pools.map(p => `<tr><td>${p[0]}</td><td class="num">${fmt(Math.round(p[1]))}</td><td><div class="bartrack"><i style="width:${p[1] / mx * 100}%"></i></div></td><td class="num">${SAR2(p[1] / U)}</td></tr>`).join('')}
-  <tr><td>Rent (edit)</td><td class="num" colspan="3"><input class="tbl-edit" type="number" value="${STATE.rent}" onchange="STATE.rent=+this.value;render();toast('Rent allocation updated')"> SAR / month</td></tr>
-  <tr><td>Ingredient waste % (edit)</td><td class="num" colspan="3"><input class="tbl-edit" type="number" step="0.5" value="${STATE.wastePct ?? 4}" onchange="STATE.wastePct=+this.value;render();toast('Waste % updated — all recipes recosted')"> % of materials per dish</td></tr></table></div>`;
+  <tr><td>${L('Rent (edit)', 'الإيجار (تعديل)')}</td><td class="num" colspan="3"><input class="tbl-edit" type="number" value="${STATE.rent}" onchange="STATE.rent=+this.value;render();toast(L('Rent allocation updated','تم تحديث توزيع الإيجار'))"> ${L('SAR / month', 'ر.س / شهر')}</td></tr>
+  <tr><td>${L('Ingredient waste % (edit)', 'نسبة هدر المكونات % (تعديل)')}</td><td class="num" colspan="3"><input class="tbl-edit" type="number" step="0.5" value="${STATE.wastePct ?? 4}" onchange="STATE.wastePct=+this.value;render();toast(L('Waste % updated — all recipes recosted','تم تحديث نسبة الهدر — أُعيد حساب كل الوصفات'))"> ${L('% of materials per dish', '% من المواد لكل صنف')}</td></tr></table></div>`;
 };
 
 // ── P&L / Profit ──────────────────────────────────────────────
@@ -728,41 +740,41 @@ PAGES.profit = () => {
   const opex = hiddenMonthly() - hiddenGroup('Shrinkage');
   const B = STATE.budget || { food: 32, labor: 20 };
   const byCat = STATE.cats.map(c => { const items = STATE.menu.filter(m => m.cat === c); if (!items.length) return null; return { c, rev: items.reduce((a, m) => a + m.price * m.sold, 0), pr: items.reduce((a, m) => a + margin(m) * m.sold, 0) }; }).filter(Boolean).sort((a, b) => b.pr - a.pr);
-  const pl = [['Revenue', t.rev, 1], ['Cost of goods (ingredients)', -t.ingT], ['Packaging', -packT], ['Waste & shrinkage', -wasteT],
-    ['— Gross profit', t.rev - t.ingT - packT - wasteT, 1], ['Labor (fully loaded)', -t.labor], ['Delivery commissions', -delT],
-    ['Operating expenses', -opex], ['Utilities (elec/water out of rent)', -utilMonthly()], ['Extra fees & fines', -xfeesMonthly()],
-    ['Rent', -t.rent], ['Government & compliance', -t.gov], ['— Net profit', t.net, 1]];
+  const pl = [[L('Revenue', 'الإيرادات'), t.rev, 1], [L('Cost of goods (ingredients)', 'تكلفة البضاعة (المكونات)'), -t.ingT], [L('Packaging', 'التغليف'), -packT], [L('Waste & shrinkage', 'الهدر والفاقد'), -wasteT],
+    [L('— Gross profit', '— إجمالي الربح'), t.rev - t.ingT - packT - wasteT, 1], [L('Labor (fully loaded)', 'العمالة (محمّلة بالكامل)'), -t.labor], [L('Delivery commissions', 'عمولات التوصيل'), -delT],
+    [L('Operating expenses', 'المصاريف التشغيلية'), -opex], [L('Utilities (elec/water out of rent)', 'المرافق (كهرباء/ماء خارج الإيجار)'), -utilMonthly()], [L('Extra fees & fines', 'رسوم وغرامات إضافية'), -xfeesMonthly()],
+    [L('Rent', 'الإيجار'), -t.rent], [L('Government & compliance', 'الحكومية والامتثال'), -t.gov], [L('— Net profit', '— صافي الربح'), t.net, 1]];
   return `<div class="grid g2">
-  <div class="card"><h4>Live P&L <span class="note">month-to-date · updates with every edit & invoice</span></h4>
+  <div class="card"><h4>${L('Live P&L', 'قائمة الدخل المباشرة')} <span class="note">${L('month-to-date · updates with every edit & invoice', 'منذ بداية الشهر · تتحدث مع كل تعديل وفاتورة')}</span></h4>
    <table>${pl.map(r => `<tr style="${r[2] ? 'font-weight:700' : ''}"><td>${r[0]}</td><td class="num ${r[1] < 0 ? '' : 'up'}">${r[1] < 0 ? '(' + fmt(Math.round(-r[1])) + ')' : fmt(Math.round(r[1]))}</td></tr>`).join('')}</table>
-   <p class="note" style="margin-top:8px">Net margin ${pct(t.net / t.rev * 100)} of revenue.</p></div>
-  <div class="card"><h4>Budgets <span class="note">live tracking — set your targets</span></h4>
+   <p class="note" style="margin-top:8px">${L('Net margin', 'الهامش الصافي')} ${pct(t.net / t.rev * 100)} ${L('of revenue.', 'من الإيرادات.')}</p></div>
+  <div class="card"><h4>${L('Budgets', 'الميزانيات')} <span class="note">${L('live tracking — set your targets', 'تتبّع مباشر — اضبط أهدافك')}</span></h4>
    <div class="grid g2">
-    <div class="field"><label>Food cost target %</label><input type="number" value="${B.food}" onchange="STATE.budget.food=+this.value;render()"></div>
-    <div class="field"><label>Labor cost target %</label><input type="number" value="${B.labor}" onchange="STATE.budget.labor=+this.value;render()"></div></div>
-   <table><tr><th>Metric</th><th class="num">Actual</th><th class="num">Target</th><th>Status</th></tr>
-    <tr><td>Food cost %</td><td class="num">${pct(t.foodPct)}</td><td class="num">${B.food}%</td><td><span class="tag ${t.foodPct <= B.food ? 'ok' : 'bad'}">${t.foodPct <= B.food ? 'On budget' : 'Over by ' + pct(t.foodPct - B.food)}</span></td></tr>
-    <tr><td>Labor cost %</td><td class="num">${pct(t.laborPct)}</td><td class="num">${B.labor}%</td><td><span class="tag ${t.laborPct <= B.labor ? 'ok' : 'bad'}">${t.laborPct <= B.labor ? 'On budget' : 'Over by ' + pct(t.laborPct - B.labor)}</span></td></tr>
-    <tr><td>Prime cost %</td><td class="num">${pct(t.primePct)}</td><td class="num">${B.food + B.labor}%</td><td><span class="tag ${t.primePct <= B.food + B.labor ? 'ok' : 'warn'}">${t.primePct <= B.food + B.labor ? 'On budget' : 'Watch'}</span></td></tr></table></div></div>
+    <div class="field"><label>${L('Food cost target %', 'هدف تكلفة الطعام %')}</label><input type="number" value="${B.food}" onchange="STATE.budget.food=+this.value;render()"></div>
+    <div class="field"><label>${L('Labor cost target %', 'هدف تكلفة العمالة %')}</label><input type="number" value="${B.labor}" onchange="STATE.budget.labor=+this.value;render()"></div></div>
+   <table><tr><th>${L('Metric', 'المؤشر')}</th><th class="num">${L('Actual', 'الفعلي')}</th><th class="num">${L('Target', 'الهدف')}</th><th>${L('Status', 'الحالة')}</th></tr>
+    <tr><td>${L('Food cost %', 'تكلفة الطعام %')}</td><td class="num">${pct(t.foodPct)}</td><td class="num">${B.food}%</td><td><span class="tag ${t.foodPct <= B.food ? 'ok' : 'bad'}">${t.foodPct <= B.food ? L('On budget', 'ضمن الميزانية') : L('Over by ', 'تجاوز ') + pct(t.foodPct - B.food)}</span></td></tr>
+    <tr><td>${L('Labor cost %', 'تكلفة العمالة %')}</td><td class="num">${pct(t.laborPct)}</td><td class="num">${B.labor}%</td><td><span class="tag ${t.laborPct <= B.labor ? 'ok' : 'bad'}">${t.laborPct <= B.labor ? L('On budget', 'ضمن الميزانية') : L('Over by ', 'تجاوز ') + pct(t.laborPct - B.labor)}</span></td></tr>
+    <tr><td>${L('Prime cost %', 'التكلفة الأولية %')}</td><td class="num">${pct(t.primePct)}</td><td class="num">${B.food + B.labor}%</td><td><span class="tag ${t.primePct <= B.food + B.labor ? 'ok' : 'warn'}">${t.primePct <= B.food + B.labor ? L('On budget', 'ضمن الميزانية') : L('Watch', 'انتبه')}</span></td></tr></table></div></div>
   <div class="grid g2" style="margin-top:13px">
-  <div class="card"><h4>Category profitability</h4><table><tr><th>Category</th><th class="num">Revenue</th><th class="num">Profit</th><th class="num">Margin</th></tr>
+  <div class="card"><h4>${L('Category profitability', 'ربحية التصنيفات')}</h4><table><tr><th>${L('Category', 'التصنيف')}</th><th class="num">${L('Revenue', 'الإيرادات')}</th><th class="num">${L('Profit', 'الربح')}</th><th class="num">${L('Margin', 'الهامش')}</th></tr>
    ${byCat.map(x => `<tr><td>${esc(x.c)}</td><td class="num">${fmt(x.rev)}</td><td class="num ${x.pr < 0 ? 'down' : ''}">${fmt(Math.round(x.pr))}</td><td class="num">${pct(x.pr / x.rev * 100)}</td></tr>`).join('')}</table></div>
-  <div class="card"><h4>Item ranking by total profit</h4><table><tr><th>Item</th><th class="num">Profit / mo</th><th>Class</th></tr>
-   ${[...STATE.menu].sort((a, b) => margin(b) * b.sold - margin(a) * a.sold).map(m => `<tr><td>${esc(m.n)}</td><td class="num ${margin(m) < 0 ? 'down' : ''}">${fmt(Math.round(margin(m) * m.sold))}</td><td><span class="tag ${mCls(m)}">${mLabel(m)}</span></td></tr>`).join('')}</table></div></div>`;
+  <div class="card"><h4>${L('Item ranking by total profit', 'ترتيب الأصناف حسب إجمالي الربح')}</h4><table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Profit / mo', 'الربح / شهر')}</th><th>${L('Class', 'الفئة')}</th></tr>
+   ${[...STATE.menu].sort((a, b) => margin(b) * b.sold - margin(a) * a.sold).map(m => `<tr><td>${esc(m.n)}</td><td class="num ${margin(m) < 0 ? 'down' : ''}">${fmt(Math.round(margin(m) * m.sold))}</td><td><span class="tag ${mCls(m)}">${mLabelD(m)}</span></td></tr>`).join('')}</table></div></div>`;
 };
 
 // ── Reports ───────────────────────────────────────────────────
 PAGES.reports = () => `<div class="grid g3">
- ${[['Owner monthly pack', 'P&L summary, menu engineering, repricing list'], ['Accountant export', 'Cost layers per item, allocations, GOSI & gov fees'], ['Investor snapshot', 'Unit economics, break-even, growth levers'], ['Food cost report', 'Ingredient usage, price changes, variance'], ['Delivery channel report', 'Per-app profitability & commission impact'], ['Compliance cost report', 'All Saudi fees with cycles & renewals']].map((r, i) => `
+ ${[[L('Owner monthly pack', 'حزمة المالك الشهرية'), L('P&L summary, menu engineering, repricing list', 'ملخص قائمة الدخل، هندسة القائمة، قائمة إعادة التسعير')], [L('Accountant export', 'تصدير المحاسب'), L('Cost layers per item, allocations, GOSI & gov fees', 'طبقات التكلفة لكل صنف، التوزيعات، التأمينات والرسوم الحكومية')], [L('Investor snapshot', 'لمحة المستثمر'), L('Unit economics, break-even, growth levers', 'اقتصاديات الوحدة، نقطة التعادل، روافع النمو')], [L('Food cost report', 'تقرير تكلفة الطعام'), L('Ingredient usage, price changes, variance', 'استهلاك المكونات، تغيّر الأسعار، الفروقات')], [L('Delivery channel report', 'تقرير قنوات التوصيل'), L('Per-app profitability & commission impact', 'ربحية كل تطبيق وأثر العمولة')], [L('Compliance cost report', 'تقرير تكاليف الامتثال'), L('All Saudi fees with cycles & renewals', 'كل الرسوم السعودية بدوراتها وتجديداتها')]].map((r, i) => `
  <div class="card"><h4>${r[0]}</h4><p class="note" style="margin-bottom:12px">${r[1]}.</p>
- <div id="rep${i}"><button class="btn btn-line btn-sm" onclick="genReport(${i})">Generate</button></div></div>`).join('')}</div>`;
+ <div id="rep${i}"><button class="btn btn-line btn-sm" onclick="genReport(${i})">${L('Generate', 'إنشاء')}</button></div></div>`).join('')}</div>`;
 
 function genReport(i) {
-  const el = $('rep' + i); el.innerHTML = '<div class="spinner"></div><p class="note" style="text-align:center;margin-top:8px">Compiling from live data…</p>';
+  const el = $('rep' + i); el.innerHTML = `<div class="spinner"></div><p class="note" style="text-align:center;margin-top:8px">${L('Compiling from live data…', 'يجري التجميع من البيانات المباشرة…')}</p>`;
   setTimeout(() => {
     const t = totals();
-    el.innerHTML = `<div class="alert good"><span>✓</span><div>Report ready: revenue ${SAR(t.rev)}, net ${SAR(Math.round(t.net))}, food cost ${pct(t.foodPct)}, ${STATE.menu.filter(m => marginPct(m) < 20).length} items flagged for repricing.</div></div>
-    <button class="btn btn-sm btn-line" onclick="toast('PDF export is wired to the backend in production')">Download PDF</button>`;
+    el.innerHTML = `<div class="alert good"><span>✓</span><div>${L('Report ready: revenue ', 'التقرير جاهز: الإيرادات ')}${SAR(t.rev)}${L(', net ', '، الصافي ')}${SAR(Math.round(t.net))}${L(', food cost ', '، تكلفة الطعام ')}${pct(t.foodPct)}${L(', ', '، ')}${STATE.menu.filter(m => marginPct(m) < 20).length}${L(' items flagged for repricing.', ' صنف موسوم لإعادة التسعير.')}</div></div>
+    <button class="btn btn-sm btn-line" onclick="toast(L('PDF export is wired to the backend in production','تصدير PDF موصول بالخادم في الإنتاج'))">${L('Download PDF', 'تنزيل PDF')}</button>`;
   }, 1300);
 }
 

@@ -131,6 +131,13 @@ const mAction = m => ({
   'Plow Horse':'Redesign recipe or raise price slightly',
   Dog:         'Remove or fully redesign',
 }[mLabel(m)]);
+const MACTION_AR = {
+  Star:        'روّج — أبرزه واحمه، ولا تخصمه أبداً',
+  Puzzle:      'أعد التسعير أو التموضع — اجمعه في وجبة، صوّره، انقله في القائمة',
+  'Plow Horse':'أعد تصميم الوصفة أو ارفع السعر قليلاً',
+  Dog:         'احذفه أو أعد تصميمه بالكامل',
+};
+const mActionD = m => (typeof isAr === 'function' && isAr()) ? MACTION_AR[mLabel(m)] : mAction(m);
 
 // ── Procurement invoice parser (static fallback for Agent E) ──
 function invMatch(text) {
