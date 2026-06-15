@@ -39,6 +39,18 @@ const DB = {
     return { data, error };
   },
 
+  // OAuth — Google. Redirects away and back; the session is then picked up by
+  // the boot block in index.html (Supabase detects it in the return URL).
+  // Requires the Google provider to be enabled in the Supabase dashboard.
+  async signInWithGoogle() {
+    if (!sb) return _noDb();
+    const { data, error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    return { data, error };
+  },
+
   async signOut() {
     if (!sb) return { error: null };
     const { error } = await sb.auth.signOut();

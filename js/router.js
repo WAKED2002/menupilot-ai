@@ -50,6 +50,7 @@ const AFTER = {};
 
 PUB.login = () => authShell(`
   <h3>${L('Welcome back', 'مرحباً بعودتك')}</h3><div class="sub">${L('Log in to your restaurant workspace.', 'سجّل الدخول إلى مساحة عمل مطعمك.')}</div>
+  <button class="gbtn" onclick="loginWithGoogle()"><span style="font-weight:800;color:#4285F4">G</span> ${L('Continue with Google', 'المتابعة عبر Google')}</button>
   <button class="gbtn" onclick="enterDemo()"><span style="font-weight:800;color:var(--gold)">D</span> ${L('Open seeded demo workspace', 'افتح مساحة العرض التجريبي')}</button>
   <div class="or">${L('or with your account', 'أو بحسابك')}</div>
   <div class="field" id="f-lemail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="lemail" type="email" placeholder="owner@restaurant.sa"><div class="err">${L('Enter a valid email.', 'أدخل بريداً صحيحاً.')}</div></div>
@@ -94,8 +95,35 @@ async function doLogin() {
   go(STATE.route || 'dash');
 }
 
+async function loginWithGoogle() {
+  const { error } = await DB.signInWithGoogle();
+  // On success the browser redirects to Google, so we only reach here on error.
+  if (error) toast(error.message || L('Google sign-in unavailable', 'تسجيل الدخول عبر Google غير متاح'), 'bad');
+}
+
+// Provision a starter org for a user who authenticated (e.g. via Google) but
+// has none yet — mirrors the seeding doSignup() does, so OAuth users land in a
+// working workspace and continue to onboarding. Returns the loaded org state.
+async function provisionOrgForUser(user) {
+  const name = user.user_metadata?.name || user.user_metadata?.full_name || (user.email || '').split('@')[0];
+  const { data: org, error } = await DB.createOrg({ name: (name || 'My') + "'s Restaurant", city: 'Riyadh', country: 'Saudi Arabia', type: TYPES[0][1], plan: 'Growth' });
+  if (error || !org) return null;
+  await DB.setBranches(org.id, ['Branch 1']);
+  await DB.bulkInsertGovFees(org.id, defaultGov());
+  await DB.bulkInsertHiddenCosts(org.id, defaultHidden());
+  await DB.bulkInsertDeliveryApps(org.id, [
+    { n: 'HungerStation', comm: 25, mkt: 5, share: 40 },
+    { n: 'Jahez', comm: 22, mkt: 3, share: 35 },
+    { n: 'ToYou', comm: 20, mkt: 2, share: 25 },
+  ]);
+  await DB.setCategories(org.id, TYPES[0][2]);
+  return await DB.loadOrgState(org.id);
+}
+
 PUB.signup = () => authShell(`
   <h3>${L('Create your workspace', 'أنشئ مساحة عملك')}</h3><div class="sub">${L('Tell us about you and your restaurant.', 'أخبرنا عنك وعن مطعمك.')}</div>
+  <button class="gbtn" onclick="loginWithGoogle()"><span style="font-weight:800;color:#4285F4">G</span> ${L('Sign up with Google', 'إنشاء حساب عبر Google')}</button>
+  <div class="or">${L('or with your email', 'أو ببريدك الإلكتروني')}</div>
   <div class="grid g2">
    <div class="field" id="f-sname"><label>${L('Owner name', 'اسم المالك')}</label><input id="sname" placeholder="${L('Bandar Waked', 'بندر واكد')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
    <div class="field" id="f-semail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="semail" type="email" placeholder="you@restaurant.sa"><div class="err">${L('Valid email required.', 'بريد صحيح مطلوب.')}</div></div>

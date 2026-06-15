@@ -83,7 +83,8 @@ function priceRec() {
   ${kpi(L('Recommended', 'المُوصى به'), SAR2(p), L('by strategist', 'حسب المُسعّر'), 'up')}
   ${kpi(L('Expected net margin', 'الهامش الصافي المتوقع'), pct(newMargin), '', newMargin >= 20 ? 'up' : 'down')}
   ${kpi(L('Risk level', 'مستوى المخاطرة'), riskD, risk === 'High' ? L('volume loss possible', 'احتمال فقدان حجم المبيعات') : L('safe range', 'نطاق آمن'), risk === 'High' ? 'down' : risk === 'Medium' ? '' : 'up')}</div>
- <p class="note" style="margin:10px 0 12px"><b>${L('Reason:', 'السبب:')}</b> ${why}</p>
+ <p class="note" style="margin:10px 0 8px"><b>${L('Reason:', 'السبب:')}</b> ${why}</p>
+ ${(() => { const cf = confidence(m); return `<div class="alert ${cf.score >= 85 ? 'info' : cf.score >= 65 ? 'warn' : 'bad'}" style="margin:0 0 12px"><span>${cf.score >= 85 ? '✓' : '◆'}</span><div><b>${L('Cost-basis confidence:', 'ثقة أساس التكلفة:')} ${cf.score}% (${confWord(cf.score)})</b>${cf.reasons.length ? '<br><span class="note">' + cf.reasons.map(esc).join(' · ') + '</span>' : ' <span class="note">' + L('confirmed inputs', 'مدخلات مؤكدة') + '</span>'}</div></div>`; })()}
  <button class="btn btn-gold btn-sm" onclick="STATE.menu[pSel.item].price=${+p.toFixed(2)};STATE.menu[pSel.item].reprice=false;render();toast(L('Price applied — dashboard & margins updated','تم تطبيق السعر — حُدّثت اللوحة والهوامش'))">${L('Apply', 'تطبيق')} ${SAR2(p)}</button>`;
 }
 
@@ -222,14 +223,16 @@ function scenOut() {
 PAGES.costing = () => {
   if (!STATE.menu.length) return emptyMenuState();
   return `<div class="card"><h4>${L('Menu Costing — true 11-layer cost per item', 'تكلفة القائمة — التكلفة الحقيقية بـ11 طبقة لكل صنف')}</h4>
- <table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Price', 'السعر')}</th><th class="num">${L('Ing.', 'المكوّنات')}</th><th class="num">${L('Labor', 'العمالة')}</th><th class="num">${L('Total cost', 'إجمالي التكلفة')}</th><th class="num">${L('Net margin', 'الهامش الصافي')}</th><th>${L('Class', 'الفئة')}</th></tr>
+ <p class="note" style="margin:-4px 0 11px">${L('Confidence reflects how much of each cost is from confirmed data vs AI estimates — hover the badge for the breakdown.', 'تعكس الثقة مقدار ما في كل تكلفة من بيانات مؤكدة مقابل تقديرات الذكاء — مرّر فوق الشارة لرؤية التفصيل.')}</p>
+ <table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Price', 'السعر')}</th><th class="num">${L('Ing.', 'المكوّنات')}</th><th class="num">${L('Labor', 'العمالة')}</th><th class="num">${L('Total cost', 'إجمالي التكلفة')}</th><th class="num">${L('Net margin', 'الهامش الصافي')}</th><th>${L('Class', 'الفئة')}</th><th class="num">${L('Confidence', 'الثقة')}</th></tr>
  ${STATE.menu.map(m => `<tr><td>${esc(m.n)}</td>
   <td class="num">${SAR2(m.price)}</td>
   <td class="num">${SAR2(ingCost(m))}</td>
   <td class="num">${SAR2(m.laborMin * laborRate())}</td>
   <td class="num"><b>${SAR2(cost(m))}</b></td>
   <td class="num ${marginPct(m) >= 20 ? 'up' : 'down'}">${pct(marginPct(m))}</td>
-  <td><span class="tag ${mCls(m)}">${mLabelD(m)}</span></td></tr>`).join('')}</table></div>`;
+  <td><span class="tag ${mCls(m)}">${mLabelD(m)}</span></td>
+  <td class="num">${confBadge(m)}</td></tr>`).join('')}</table></div>`;
 };
 
 // ── Settings ──────────────────────────────────────────────────

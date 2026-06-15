@@ -139,6 +139,52 @@ const MACTION_AR = {
 };
 const mActionD = m => (typeof isAr === 'function' && isAr()) ? MACTION_AR[mLabel(m)] : mAction(m);
 
+// ── Confidence scoring (spec §8) ──────────────────────────────
+// Every AI-derived cost carries a 0–100 confidence score, built only from
+// signals we actually have: recipe-approval state, whether the ingredient
+// prices are AI estimates vs confirmed inputs/invoices, and whether real
+// sales volume is connected. Returns the score plus the reasons it was
+// lowered, so the UI can explain a low number instead of just showing it.
+function confidence(m) {
+  let score = 100;
+  const reasons = [];
+  // 1) Recipe approval state
+  if (m.status === 'pending') {
+    score -= 22;
+    reasons.push(L('Recipe drafted by AI — not yet approved by you.', 'الوصفة مسودة من الذكاء — لم تعتمدها بعد.'));
+  } else if (m.status !== 'approved') { // 'extracted' or anything unreviewed
+    score -= 32;
+    reasons.push(L('Recipe auto-extracted and not reviewed.', 'الوصفة مستخرجة تلقائياً ولم تُراجَع.'));
+  }
+  // 2) Ingredient price provenance — AI estimates vs confirmed prices
+  const lines = m.recipe.length || 1;
+  const estLines = m.recipe.filter(([id]) => { const i = ingById(id); return i && i.est; }).length;
+  if (estLines) {
+    score -= Math.min(30, Math.round(30 * estLines / lines));
+    reasons.push(L(`${estLines} of ${lines} ingredient prices are AI estimates, not invoices.`, `${estLines} من ${lines} من أسعار المكونات تقديرات ذكاء، وليست فواتير.`));
+  }
+  // 3) Sales volume connected
+  if (!m.sold) {
+    score -= 12;
+    reasons.push(L('No sales volume recorded for this item.', 'لا يوجد حجم مبيعات مسجّل لهذا الصنف.'));
+  }
+  // 4) Waste assumption (only flagged once the bigger gaps are closed)
+  if (!estLines && m.status === 'approved') {
+    score -= 5;
+    reasons.push(L('Waste % is an estimate — refine it in Hidden Costs.', 'نسبة الهدر تقديرية — اضبطها في التكاليف الخفية.'));
+  }
+  score = Math.max(42, Math.min(99, Math.round(score)));
+  return { score, reasons };
+}
+const confCls = s => s >= 85 ? 'ok' : s >= 65 ? 'warn' : 'bad';
+const confWord = s => s >= 85 ? L('High', 'مرتفعة') : s >= 65 ? L('Medium', 'متوسطة') : L('Low', 'منخفضة');
+// Compact badge with a hover tooltip explaining any deductions.
+function confBadge(m) {
+  const { score, reasons } = confidence(m);
+  const tip = reasons.length ? reasons.join(' · ') : L('Confirmed inputs — recipe approved and prices from real data.', 'مدخلات مؤكدة — الوصفة معتمدة والأسعار من بيانات حقيقية.');
+  return `<span class="tag ${confCls(score)}" title="${esc(tip)}">${score}%</span>`;
+}
+
 // ── Procurement invoice parser (static fallback for Agent E) ──
 function invMatch(text) {
   const norm = x => x.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));

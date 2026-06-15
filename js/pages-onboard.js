@@ -78,7 +78,7 @@ function obBody(st) {
      ? pend.slice(0, 3).map(m => recipeCard(m, true)).join('') + (pend.length > 3 ? `<p class="note">${L('…and ' + (pend.length - 3) + ' more in Recipe Builder.', '…و' + (pend.length - 3) + ' أخرى في منشئ الوصفات.')}</p>` : '')
      : `<div class="alert good"><span>✓</span><div>${L('All ' + STATE.menu.length + ' recipes approved.', 'تم اعتماد كل الوصفات الـ' + STATE.menu.length + '.')}</div></div>`)
    : `<div class="empty"><div class="big">⚗</div><h5>${L('No items yet', 'لا توجد أصناف بعد')}</h5><p>${L('Run extraction first.', 'شغّل الاستخراج أولاً.')}</p></div>`}
-   ${pend.length ? `<button class="btn btn-line btn-sm" onclick="STATE.menu.forEach(m=>m.status='approved');render();toast(L('All recipes approved','تم اعتماد كل الوصفات'))">${L('Approve all', 'اعتماد الكل')}</button>` : ''}`;
+   ${pend.length ? `<button class="btn btn-line btn-sm" onclick="approveAllRecipes()">${L('Approve all', 'اعتماد الكل')}</button>` : ''}`;
   }
 
   if (st === 6) return `<h4>${L('Suppliers', 'الموردون')}</h4>
@@ -255,10 +255,14 @@ function addEmpQuick() {
 }
 
 function recipeCard(m, inWizard) {
-  return `<div class="card" style="background:var(--paper);margin-bottom:12px"><h4>${esc(m.n)} <span style="display:flex;gap:7px"><span class="tag ${m.status === 'approved' ? 'ok' : 'warn'}">${m.status === 'approved' ? L('Approved', 'معتمدة') : L('AI suggested', 'مقترحة بالذكاء')}</span></span></h4>
+  const cf = confidence(m);
+  return `<div class="card" style="background:var(--paper);margin-bottom:12px"><h4>${esc(m.n)} <span style="display:flex;gap:7px;align-items:center">
+   <span class="tag ${cf.score >= 85 ? 'ok' : cf.score >= 65 ? 'warn' : 'bad'}" title="${esc(cf.reasons.join(' · ') || L('Confirmed inputs.', 'مدخلات مؤكدة.'))}">${L('Confidence', 'الثقة')} ${cf.score}%</span>
+   <span class="tag ${m.status === 'approved' ? 'ok' : 'warn'}">${m.status === 'approved' ? L('Approved', 'معتمدة') : L('AI suggested', 'مقترحة بالذكاء')}</span></span></h4>
+   ${cf.reasons.length ? `<p class="note" style="margin:-2px 0 10px"><b>${L('Why not 100%:', 'لماذا ليست 100%:')}</b> ${cf.reasons.map(esc).join(' · ')}</p>` : ''}
    <table><tr><th>${L('Ingredient', 'المكوّن')}</th><th class="num">${L('Qty (g/ml/pc)', 'الكمية (جم/مل/قطعة)')}</th><th class="num">${L('Yield %', 'الإنتاجية %')}</th><th class="num">${L('Line cost', 'تكلفة السطر')}</th><th></th></tr>
    ${m.recipe.map(([id, qy], ri) => { const i = ingById(id); if (!i) return ''; const lc = (i.unit === 'pc' ? qy * i.price : qy / 1000 * i.price) / (i.yield || 1);
-     return `<tr><td>${esc(i.n)}</td>
+     return `<tr><td>${esc(i.n)}${i.est ? ` <span class="tag warn" style="font-size:9px">${L('est', 'تقدير')}</span>` : ''}</td>
       <td class="num"><input class="tbl-edit" type="number" value="${qy}" onchange="m_(${q(m.id)}).recipe[${ri}][1]=+this.value;render()"></td>
       <td class="num">${Math.round((i.yield || 1) * 100)}%</td><td class="num">${lc.toFixed(2)}</td>
       <td><button class="btn btn-sm btn-danger" onclick="m_(${q(m.id)}).recipe.splice(${ri},1);render()">✕</button></td></tr>`; }).join('')}
@@ -266,9 +270,68 @@ function recipeCard(m, inWizard) {
    <div style="display:flex;gap:8px;margin-top:11px;flex-wrap:wrap;align-items:center">
     <select id="addIng-${m.id}" class="tbl-edit" style="width:200px;text-align:start">${STATE.ings.map(i => `<option value="${i.id}">${esc(i.n)}</option>`).join('')}</select>
     <button class="btn btn-sm btn-line" onclick="m_(${q(m.id)}).recipe.push([$('addIng-${m.id}').value,50]);render()">${L('+ Add ingredient', '+ إضافة مكوّن')}</button>
-    ${m.status !== 'approved' ? `<button class="btn btn-sm btn-gold" onclick="m_(${q(m.id)}).status='approved';render();toast(L('Recipe approved','تم اعتماد الوصفة'))">${L('✓ Approve recipe', '✓ اعتماد الوصفة')}</button>` : ''}
+    ${inWizard ? '' : `<button class="btn btn-sm btn-line" onclick="saveRecipeVersion(${q(m.id)})">${L('⎘ Save version', '⎘ حفظ نسخة')}</button>`}
+    ${m.status !== 'approved' ? `<button class="btn btn-sm btn-gold" onclick="approveRecipe(${q(m.id)})">${L('✓ Approve recipe', '✓ اعتماد الوصفة')}</button>` : ''}
     <span class="note" style="margin-inline-start:auto">${L('Ingredient cost:', 'تكلفة المكونات:')} <b style="font-family:var(--mono)">${SAR2(ingCost(m))}</b></span>
-   </div></div>`;
+   </div>
+   ${inWizard ? '' : recipeHistory(m)}</div>`;
+}
+
+// ── Recipe versioning (spec §3) ──────────────────────────────
+// A version is a frozen snapshot of the recipe with its cost & margin at the
+// time, plus who changed it and why — so the impact of a change is auditable.
+function snapshotRecipe(m, reason) {
+  if (!m.versions) m.versions = [];
+  m.versions.push({
+    ts: new Date().toISOString(),
+    by: (STATE.user && STATE.user.n) || L('System', 'النظام'),
+    reason: reason || L('Manual save', 'حفظ يدوي'),
+    recipe: m.recipe.map(r => r.slice()),
+    ingCost: +ingCost(m).toFixed(2),
+    cost: +cost(m).toFixed(2),
+    marginPct: +marginPct(m).toFixed(1),
+  });
+}
+
+function approveAllRecipes() {
+  STATE.menu.forEach(m => {
+    if (m.status === 'approved') return;
+    m.status = 'approved';
+    snapshotRecipe(m, L('Approved (bulk)', 'اعتماد (جماعي)'));
+  });
+  render();
+  toast(L('All recipes approved & versions saved', 'تم اعتماد كل الوصفات وحفظ النسخ'));
+}
+
+function approveRecipe(id) {
+  const m = m_(id); if (!m) return;
+  const first = !m.versions || !m.versions.length;
+  m.status = 'approved';
+  snapshotRecipe(m, first ? L('Initial approved recipe', 'الوصفة المعتمدة الأولى') : L('Re-approved after edits', 'إعادة اعتماد بعد التعديل'));
+  render();
+  toast(L('Recipe approved & version saved', 'تم اعتماد الوصفة وحفظ النسخة'));
+}
+
+function saveRecipeVersion(id) {
+  const m = m_(id); if (!m) return;
+  modal(`<h3>${L('Save recipe version', 'حفظ نسخة من الوصفة')}</h3>
+   <div class="sub">${esc(m.n)} — ${L('current ingredient cost', 'تكلفة المكونات الحالية')} <b>${SAR2(ingCost(m))}</b>, ${L('net margin', 'الهامش الصافي')} <b>${pct(marginPct(m))}</b></div>
+   <div class="field"><label>${L('Reason for change', 'سبب التغيير')}</label><input id="rvReason" placeholder="${L('e.g. Reduced shrimp 180g → 160g', 'مثال: تقليل الجمبري 180جم ← 160جم')}"></div>
+   <div style="display:flex;gap:9px;justify-content:flex-end"><button class="btn btn-line" onclick="closeModal()">${L('Cancel', 'إلغاء')}</button>
+   <button class="btn btn-gold" onclick="(function(){var mm=m_(${q(id)});snapshotRecipe(mm,$('rvReason').value.trim()||L('Manual save','حفظ يدوي'));closeModal();render();toast(L('Version saved','تم حفظ النسخة'))})()">${L('Save version', 'حفظ النسخة')}</button></div>`);
+}
+
+function recipeHistory(m) {
+  const vs = m.versions || [];
+  if (!vs.length) return `<p class="note" style="margin-top:10px">${L('No saved versions yet — approve the recipe or click “Save version” to start a change history.', 'لا توجد نسخ محفوظة بعد — اعتمد الوصفة أو انقر "حفظ نسخة" لبدء سجل التغييرات.')}</p>`;
+  return `<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;font-size:13px">${L('Version history', 'سجل النسخ')} (${vs.length})</summary>
+   <table style="margin-top:8px"><tr><th>#</th><th>${L('Date', 'التاريخ')}</th><th>${L('By', 'بواسطة')}</th><th>${L('Reason', 'السبب')}</th><th class="num">${L('Ing. cost', 'تكلفة المكونات')}</th><th class="num">${L('Margin', 'الهامش')}</th><th class="num">${L('Δ cost', 'فرق التكلفة')}</th></tr>
+   ${vs.map((v, i) => { const prev = vs[i - 1]; const dC = prev ? v.ingCost - prev.ingCost : 0;
+     return `<tr><td>v${i + 1}</td><td class="note">${new Date(v.ts).toLocaleDateString(isAr() ? 'ar' : 'en-US', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+      <td class="note">${esc(v.by)}</td><td>${esc(v.reason)}</td><td class="num">${SAR2(v.ingCost)}</td>
+      <td class="num ${v.marginPct >= 20 ? 'up' : 'down'}">${pct(v.marginPct)}</td>
+      <td class="num ${dC > 0 ? 'down' : dC < 0 ? 'up' : ''}">${prev ? (dC >= 0 ? '+' : '') + SAR2(dC) : '—'}</td></tr>`; }).join('')}
+   </table></details>`;
 }
 
 async function finishOnboarding() {

@@ -59,6 +59,8 @@ function migrate(s) {
   };
   absorb('elec', 'electric');
   absorb('water', 'water');
+  // Every menu item carries a recipe version history (spec §3).
+  (s.menu || []).forEach(m => { if (!m.versions) m.versions = []; });
   s._migrated = true;
   return s;
 }
@@ -181,6 +183,12 @@ function seedDemo() {
     { d: '01 Mar 2026', n: 'INV-0093', amt: 599, st: 'Paid' },
   ];
   s.menu[1].status = 'pending';
+  // Demo recipe history on the shrimp dish (spec §3 example): a quantity cut
+  // that lowered cost and lifted margin — shows the versioning UI populated.
+  s.menu[2].versions = [
+    { ts: '2026-03-04T09:00:00Z', by: 'Faisal A.', reason: 'Initial approved recipe', recipe: s.menu[2].recipe.map(r => r.slice()), ingCost: 24.10, cost: 49.20, marginPct: 37.7 },
+    { ts: '2026-05-21T14:30:00Z', by: 'Bandar W.', reason: 'Reduced shrimp 200g → 180g after yield review', recipe: s.menu[2].recipe.map(r => r.slice()), ingCost: 21.40, cost: 46.10, marginPct: 41.6 },
+  ];
   return s;
 }
 
