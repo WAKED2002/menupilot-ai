@@ -18,29 +18,29 @@ PAGES.dash = () => {
   const pend = STATE.menu.filter(m => m.status !== 'approved');
   const alerts = STATE.ings.filter(i => i.hist.length > 1 && i.hist[i.hist.length - 1].p > i.hist[i.hist.length - 2].p * 1.05);
   return `<div class="grid g5">
-  ${kpi('Revenue', SAR(t.rev), 'monthly')}
-  ${kpi('Gross profit', SAR(Math.round(t.gross)), pct(t.gross / t.rev * 100) + ' of revenue', 'up')}
-  ${kpi('Net profit', SAR(Math.round(t.net)), 'after all 11 layers', t.net > 0 ? 'up' : 'down')}
-  ${kpi('Food cost %', pct(t.foodPct), 'target ≤ 32%', t.foodPct <= 32 ? 'up' : 'down')}
-  ${kpi('Prime cost %', pct(t.primePct), 'food + labor', t.primePct <= 60 ? 'up' : 'down')}</div>
+  ${kpi(L('Revenue', 'الإيرادات'), SAR(t.rev), L('monthly', 'شهري'))}
+  ${kpi(L('Gross profit', 'إجمالي الربح'), SAR(Math.round(t.gross)), pct(t.gross / t.rev * 100) + L(' of revenue', ' من الإيرادات'), 'up')}
+  ${kpi(L('Net profit', 'صافي الربح'), SAR(Math.round(t.net)), L('after all 11 layers', 'بعد كل الطبقات الـ11'), t.net > 0 ? 'up' : 'down')}
+  ${kpi(L('Food cost %', 'نسبة تكلفة الطعام %'), pct(t.foodPct), L('target ≤ 32%', 'الهدف ≤ 32%'), t.foodPct <= 32 ? 'up' : 'down')}
+  ${kpi(L('Prime cost %', 'نسبة التكلفة الأولية %'), pct(t.primePct), L('food + labor', 'الطعام + العمالة'), t.primePct <= 60 ? 'up' : 'down')}</div>
  <div class="grid g5" style="margin-top:13px">
-  ${kpi('Labor cost %', pct(t.laborPct))}${kpi('Rent cost %', pct(t.rentPct))}
-  ${kpi('Delivery commission', pct(t.delPct), 'of revenue')}
-  ${kpi('Gov. fees / month', SAR(Math.round(t.gov)), 'allocated per dish')}
-  ${kpi('Hidden costs / month', SAR(Math.round(t.hidden)))}</div>
+  ${kpi(L('Labor cost %', 'نسبة العمالة %'), pct(t.laborPct))}${kpi(L('Rent cost %', 'نسبة الإيجار %'), pct(t.rentPct))}
+  ${kpi(L('Delivery commission', 'عمولة التوصيل'), pct(t.delPct), L('of revenue', 'من الإيرادات'))}
+  ${kpi(L('Gov. fees / month', 'الرسوم الحكومية / شهر'), SAR(Math.round(t.gov)), L('allocated per dish', 'موزعة على كل صنف'))}
+  ${kpi(L('Hidden costs / month', 'التكاليف الخفية / شهر'), SAR(Math.round(t.hidden)))}</div>
  <div class="grid g2" style="margin-top:13px">
-  <div class="card"><h4>Items needing repricing <span class="tag ${need.length ? 'bad' : 'ok'}">${need.length}</span></h4>
-   ${need.length ? `<table><tr><th>Item</th><th class="num">Margin</th><th></th></tr>${need.map(m => `<tr><td>${esc(m.n)}</td><td class="num down">${pct(marginPct(m))}</td><td><button class="btn btn-sm btn-line" onclick="go('pricing')">Open strategist</button></td></tr>`).join('')}</table>`
-   : '<div class="alert good"><span>✓</span><div>All items above the 20% net-margin floor.</div></div>'}
-   <h4 style="margin-top:16px">Supplier price alerts <span class="tag ${alerts.length ? 'warn' : 'ok'}">${alerts.length}</span></h4>
-   ${alerts.map(i => `<div class="alert warn"><span>◆</span><div><b>${esc(i.n)}</b> price up from ${SAR2(i.hist[i.hist.length - 2].p)} → ${SAR2(i.hist[i.hist.length - 1].p)} /kg. ${i.hist.length > 0 ? spark(i.hist) : ''}</div></div>`).join('') || '<div class="note">No price alerts.</div>'}
+  <div class="card"><h4>${L('Items needing repricing', 'أصناف تحتاج إعادة تسعير')} <span class="tag ${need.length ? 'bad' : 'ok'}">${need.length}</span></h4>
+   ${need.length ? `<table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Margin', 'الهامش')}</th><th></th></tr>${need.map(m => `<tr><td>${esc(m.n)}</td><td class="num down">${pct(marginPct(m))}</td><td><button class="btn btn-sm btn-line" onclick="go('pricing')">${L('Open strategist', 'فتح المُسعّر')}</button></td></tr>`).join('')}</table>`
+   : `<div class="alert good"><span>✓</span><div>${L('All items above the 20% net-margin floor.', 'كل الأصناف فوق حد الهامش الصافي 20%.')}</div></div>`}
+   <h4 style="margin-top:16px">${L('Supplier price alerts', 'تنبيهات أسعار الموردين')} <span class="tag ${alerts.length ? 'warn' : 'ok'}">${alerts.length}</span></h4>
+   ${alerts.map(i => `<div class="alert warn"><span>◆</span><div><b>${esc(i.n)}</b> ${L('price up from', 'ارتفع السعر من')} ${SAR2(i.hist[i.hist.length - 2].p)} → ${SAR2(i.hist[i.hist.length - 1].p)} ${L('/kg.', '/كجم.')} ${i.hist.length > 0 ? spark(i.hist) : ''}</div></div>`).join('') || `<div class="note">${L('No price alerts.', 'لا توجد تنبيهات أسعار.')}</div>`}
   </div>
-  <div class="card"><h4>Break-even</h4>
-   ${kpi('Break-even revenue', SAR(Math.round(be.rev)), 'monthly threshold')}
+  <div class="card"><h4>${L('Break-even', 'نقطة التعادل')}</h4>
+   ${kpi(L('Break-even revenue', 'إيرادات التعادل'), SAR(Math.round(be.rev)), L('monthly threshold', 'الحد الشهري'))}
    <div class="bartrack" style="margin:12px 0 8px"><i style="width:${Math.min(100, t.rev / be.rev * 100).toFixed(0)}%"></i></div>
-   <p class="note">At ${SAR(t.rev)} revenue — ${t.rev > be.rev ? 'above' : 'below'} break-even by ${SAR(Math.round(Math.abs(t.rev - be.rev)))}. CMR: ${pct(be.cmr * 100)}.</p>
-   <h4 style="margin-top:16px">Pending recipe approvals <span class="tag ${pend.length ? 'warn' : 'ok'}">${pend.length}</span></h4>
-   ${pend.slice(0, 3).map(m => `<div class="alert warn"><span>⚗</span><div><b>${esc(m.n)}</b> — recipe needs approval before costing is accurate. <button class="btn btn-sm btn-line" onclick="go('recipe')" style="margin-top:4px">Review</button></div></div>`).join('')}
+   <p class="note">${L('At', 'عند')} ${SAR(t.rev)} ${L('revenue —', 'إيرادات —')} ${t.rev > be.rev ? L('above', 'فوق') : L('below', 'تحت')} ${L('break-even by', 'التعادل بمقدار')} ${SAR(Math.round(Math.abs(t.rev - be.rev)))}. ${L('CMR:', 'نسبة هامش المساهمة:')} ${pct(be.cmr * 100)}.</p>
+   <h4 style="margin-top:16px">${L('Pending recipe approvals', 'وصفات بانتظار الاعتماد')} <span class="tag ${pend.length ? 'warn' : 'ok'}">${pend.length}</span></h4>
+   ${pend.slice(0, 3).map(m => `<div class="alert warn"><span>⚗</span><div><b>${esc(m.n)}</b> — ${L('recipe needs approval before costing is accurate.', 'تحتاج الوصفة إلى اعتماد قبل أن تكون التكلفة دقيقة.')} <button class="btn btn-sm btn-line" onclick="go('recipe')" style="margin-top:4px">${L('Review', 'مراجعة')}</button></div></div>`).join('')}
   </div></div>`;
 };
 
@@ -49,15 +49,15 @@ let pSel = { item: 0, strat: 'cost', target: 28 };
 PAGES.pricing = () => {
   if (!STATE.menu.length) return emptyMenuState();
   pSel.item = Math.min(pSel.item, STATE.menu.length - 1);
-  const strats = [['cost','Cost-plus'],['markup','Markup ×2.6 on materials'],['comp','Competitor based'],['value','Value based'],['del','Delivery-app pricing'],['combo','Combo pricing'],['prem','Premium'],['psy','Psychological'],['seas','Seasonal'],['branch','Branch-specific']];
-  return `<div class="card"><h4>Pricing Strategist Agent <span class="tag gold">Agent D</span></h4>
+  const strats = [['cost',L('Cost-plus','التكلفة زائد هامش')],['markup',L('Markup ×2.6 on materials','ترميز ×2.6 على المواد')],['comp',L('Competitor based','مبني على المنافسين')],['value',L('Value based','مبني على القيمة')],['del',L('Delivery-app pricing','تسعير تطبيقات التوصيل')],['combo',L('Combo pricing','تسعير الكومبو')],['prem',L('Premium','مميّز')],['psy',L('Psychological','نفسي')],['seas',L('Seasonal','موسمي')],['branch',L('Branch-specific','خاص بالفرع')]];
+  return `<div class="card"><h4>${L('Pricing Strategist Agent', 'وكيل استراتيجية التسعير')} <span class="tag gold">${L('Agent D', 'الوكيل D')}</span></h4>
  <div class="grid g3">
-  <div class="field"><label>Menu item</label><select onchange="pSel.item=+this.value;render()">${STATE.menu.map((m, i) => `<option value="${i}" ${i === pSel.item ? 'selected' : ''}>${esc(m.n)}</option>`).join('')}</select></div>
-  <div class="field"><label>Strategy</label><select onchange="pSel.strat=this.value;render()">${strats.map(s => `<option value="${s[0]}" ${s[0] === pSel.strat ? 'selected' : ''}>${s[1]}</option>`).join('')}</select></div>
-  <div class="field"><label>Target net margin %</label><input type="number" value="${pSel.target}" min="10" max="45" onchange="pSel.target=+this.value;render()"></div></div>
+  <div class="field"><label>${L('Menu item', 'صنف القائمة')}</label><select onchange="pSel.item=+this.value;render()">${STATE.menu.map((m, i) => `<option value="${i}" ${i === pSel.item ? 'selected' : ''}>${esc(m.n)}</option>`).join('')}</select></div>
+  <div class="field"><label>${L('Strategy', 'الاستراتيجية')}</label><select onchange="pSel.strat=this.value;render()">${strats.map(s => `<option value="${s[0]}" ${s[0] === pSel.strat ? 'selected' : ''}>${s[1]}</option>`).join('')}</select></div>
+  <div class="field"><label>${L('Target net margin %', 'الهامش الصافي المستهدف %')}</label><input type="number" value="${pSel.target}" min="10" max="45" onchange="pSel.target=+this.value;render()"></div></div>
  ${priceRec()}
  <div id="ai-pricing-rationale" style="margin-top:12px"></div>
- <button class="btn btn-line btn-sm" style="margin-top:8px" onclick="loadPricingRationale()">Ask Claude why →</button></div>`;
+ <button class="btn btn-line btn-sm" style="margin-top:8px" onclick="loadPricingRationale()">${L('Ask Claude why →', 'اسأل Claude عن السبب →')}</button></div>`;
 };
 
 function priceRec() {
@@ -65,25 +65,26 @@ function priceRec() {
   let p, why, risk = 'Low';
   const fixedPart = c - layers(m).del;
   const solve = tt => { const denom = 1 - tt - m.delShare * blendedAppRate(); return denom > 0.05 ? fixedPart / denom : fixedPart * 4; };
-  if (s === 'cost')   { p = solve(t); why = `True cost ${SAR2(c)} solved so net margin = ${pSel.target}% after the delivery layer.`; }
-  else if (s === 'markup') { p = ingCost(m) * 2.6; why = 'Materials × 2.6 — a classic kitchen markup; check it clears your true-cost floor.'; risk = p < c ? 'High' : 'Medium'; }
-  else if (s === 'comp') { p = m.price * 1.04; why = '~4% above median of nearby competitors in your category.'; risk = 'Medium'; }
-  else if (s === 'value') { p = Math.max(m.price, solve(t)) * 1.06; why = 'Anchored on perceived value; supported by photography & menu placement.'; risk = 'Medium'; }
-  else if (s === 'del')   { p = solve(t) / (1 - blendedAppRate()); why = `Grossed up so margin survives the blended ${pct(blendedAppRate() * 100)} platform take.`; }
-  else if (s === 'combo') { p = (m.price + 12) * 0.93; why = 'Bundled at 7% off vs separate items — raises ticket while protecting margin.'; }
-  else if (s === 'prem')  { p = Math.max(m.price * 1.18, c / (1 - 0.65)); why = 'Premium anchor at ≥65% margin; pair with upgraded plating.'; risk = 'Medium'; }
-  else if (s === 'psy')   { p = Math.max(Math.round(solve(t)), Math.round(m.price)) - 1; why = 'Rounded to a 9-ending just under the next threshold.'; }
-  else if (s === 'seas')  { p = solve(t) * 1.08; why = 'Peak-season uplift (+8%); auto-revert after season.'; risk = 'Medium'; }
-  else { p = m.price * 1.08; why = 'Override for premium-location branch (+8%); base unchanged elsewhere.'; }
+  if (s === 'cost')   { p = solve(t); why = L(`True cost ${SAR2(c)} solved so net margin = ${pSel.target}% after the delivery layer.`, `حُلّت التكلفة الحقيقية ${SAR2(c)} ليصبح الهامش الصافي = ${pSel.target}% بعد طبقة التوصيل.`); }
+  else if (s === 'markup') { p = ingCost(m) * 2.6; why = L('Materials × 2.6 — a classic kitchen markup; check it clears your true-cost floor.', 'المواد × 2.6 — ترميز مطبخي تقليدي؛ تأكد أنه يتجاوز حد التكلفة الحقيقية.'); risk = p < c ? 'High' : 'Medium'; }
+  else if (s === 'comp') { p = m.price * 1.04; why = L('~4% above median of nearby competitors in your category.', 'أعلى بنحو 4% من وسيط المنافسين القريبين في فئتك.'); risk = 'Medium'; }
+  else if (s === 'value') { p = Math.max(m.price, solve(t)) * 1.06; why = L('Anchored on perceived value; supported by photography & menu placement.', 'مبني على القيمة المُدركة؛ مدعوم بالتصوير وموضع الصنف في القائمة.'); risk = 'Medium'; }
+  else if (s === 'del')   { p = solve(t) / (1 - blendedAppRate()); why = L(`Grossed up so margin survives the blended ${pct(blendedAppRate() * 100)} platform take.`, `مرفوع ليصمد الهامش أمام عمولة المنصات المدمجة ${pct(blendedAppRate() * 100)}.`); }
+  else if (s === 'combo') { p = (m.price + 12) * 0.93; why = L('Bundled at 7% off vs separate items — raises ticket while protecting margin.', 'مجمّع بخصم 7% مقارنة بالأصناف المنفصلة — يرفع قيمة الفاتورة مع حماية الهامش.'); }
+  else if (s === 'prem')  { p = Math.max(m.price * 1.18, c / (1 - 0.65)); why = L('Premium anchor at ≥65% margin; pair with upgraded plating.', 'تثبيت مميّز بهامش ≥65%؛ اقرنه بتقديم مُطوّر.'); risk = 'Medium'; }
+  else if (s === 'psy')   { p = Math.max(Math.round(solve(t)), Math.round(m.price)) - 1; why = L('Rounded to a 9-ending just under the next threshold.', 'مُقرّب لينتهي بالرقم 9 أسفل العتبة التالية مباشرة.'); }
+  else if (s === 'seas')  { p = solve(t) * 1.08; why = L('Peak-season uplift (+8%); auto-revert after season.', 'زيادة موسم الذروة (+8%)؛ تعود تلقائياً بعد الموسم.'); risk = 'Medium'; }
+  else { p = m.price * 1.08; why = L('Override for premium-location branch (+8%); base unchanged elsewhere.', 'تجاوز لفرع الموقع المميّز (+8%)؛ السعر الأساسي يبقى كما هو في غيره.'); }
   const newMargin = (p - (fixedPart + m.delShare * blendedAppRate() * p)) / p * 100;
   if (newMargin < 15) risk = 'High'; if (p > m.price * 1.25) risk = 'High';
+  const riskD = { Low: L('Low', 'منخفض'), Medium: L('Medium', 'متوسط'), High: L('High', 'مرتفع') }[risk];
   return `<div class="grid g4" style="margin-top:4px">
-  ${kpi('Current price', SAR2(m.price))}
-  ${kpi('Recommended', SAR2(p), 'by strategist', 'up')}
-  ${kpi('Expected net margin', pct(newMargin), '', newMargin >= 20 ? 'up' : 'down')}
-  ${kpi('Risk level', risk, risk === 'High' ? 'volume loss possible' : 'safe range', risk === 'High' ? 'down' : risk === 'Medium' ? '' : 'up')}</div>
- <p class="note" style="margin:10px 0 12px"><b>Reason:</b> ${why}</p>
- <button class="btn btn-gold btn-sm" onclick="STATE.menu[pSel.item].price=${+p.toFixed(2)};STATE.menu[pSel.item].reprice=false;render();toast('Price applied — dashboard & margins updated')">Apply ${SAR2(p)}</button>`;
+  ${kpi(L('Current price', 'السعر الحالي'), SAR2(m.price))}
+  ${kpi(L('Recommended', 'المُوصى به'), SAR2(p), L('by strategist', 'حسب المُسعّر'), 'up')}
+  ${kpi(L('Expected net margin', 'الهامش الصافي المتوقع'), pct(newMargin), '', newMargin >= 20 ? 'up' : 'down')}
+  ${kpi(L('Risk level', 'مستوى المخاطرة'), riskD, risk === 'High' ? L('volume loss possible', 'احتمال فقدان حجم المبيعات') : L('safe range', 'نطاق آمن'), risk === 'High' ? 'down' : risk === 'Medium' ? '' : 'up')}</div>
+ <p class="note" style="margin:10px 0 12px"><b>${L('Reason:', 'السبب:')}</b> ${why}</p>
+ <button class="btn btn-gold btn-sm" onclick="STATE.menu[pSel.item].price=${+p.toFixed(2)};STATE.menu[pSel.item].reprice=false;render();toast(L('Price applied — dashboard & margins updated','تم تطبيق السعر — حُدّثت اللوحة والهوامش'))">${L('Apply', 'تطبيق')} ${SAR2(p)}</button>`;
 }
 
 async function loadPricingRationale() {
@@ -220,36 +221,36 @@ function scenOut() {
 // ── Costing page (per-item true cost breakdown) ───────────────
 PAGES.costing = () => {
   if (!STATE.menu.length) return emptyMenuState();
-  return `<div class="card"><h4>Menu Costing — true 11-layer cost per item</h4>
- <table><tr><th>Item</th><th class="num">Price</th><th class="num">Ing.</th><th class="num">Labor</th><th class="num">Total cost</th><th class="num">Net margin</th><th>Class</th></tr>
+  return `<div class="card"><h4>${L('Menu Costing — true 11-layer cost per item', 'تكلفة القائمة — التكلفة الحقيقية بـ11 طبقة لكل صنف')}</h4>
+ <table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Price', 'السعر')}</th><th class="num">${L('Ing.', 'المكوّنات')}</th><th class="num">${L('Labor', 'العمالة')}</th><th class="num">${L('Total cost', 'إجمالي التكلفة')}</th><th class="num">${L('Net margin', 'الهامش الصافي')}</th><th>${L('Class', 'الفئة')}</th></tr>
  ${STATE.menu.map(m => `<tr><td>${esc(m.n)}</td>
   <td class="num">${SAR2(m.price)}</td>
   <td class="num">${SAR2(ingCost(m))}</td>
   <td class="num">${SAR2(m.laborMin * laborRate())}</td>
   <td class="num"><b>${SAR2(cost(m))}</b></td>
   <td class="num ${marginPct(m) >= 20 ? 'up' : 'down'}">${pct(marginPct(m))}</td>
-  <td><span class="tag ${mCls(m)}">${mLabel(m)}</span></td></tr>`).join('')}</table></div>`;
+  <td><span class="tag ${mCls(m)}">${mLabelD(m)}</span></td></tr>`).join('')}</table></div>`;
 };
 
 // ── Settings ──────────────────────────────────────────────────
 PAGES.settings = () => `<div class="grid g2">
- <div class="card"><h4>Organization</h4>
-  <div class="field"><label>Name</label><input value="${esc(STATE.org.name)}" onchange="STATE.org.name=this.value;render()"></div>
+ <div class="card"><h4>${L('Organization', 'المنشأة')}</h4>
+  <div class="field"><label>${L('Name', 'الاسم')}</label><input value="${esc(STATE.org.name)}" onchange="STATE.org.name=this.value;render()"></div>
   <div class="grid g2">
-   <div class="field"><label>Country</label><input value="${esc(STATE.org.country)}" onchange="STATE.org.country=this.value"></div>
-   <div class="field"><label>City</label><input value="${esc(STATE.org.city)}" onchange="STATE.org.city=this.value"></div></div>
-  <div class="field"><label>Branches (comma separated)</label><input value="${esc(STATE.org.branches.join(', '))}" onchange="STATE.org.branches=this.value.split(',').map(x=>x.trim()).filter(Boolean);render()"></div>
-  <div class="field"><label>Monthly rent (SAR)</label><input type="number" value="${STATE.rent}" onchange="STATE.rent=+this.value;render()"></div>
-  ${STATE._orgId ? `<button class="btn btn-line btn-sm" onclick="saveOrgSettings()">Save to database</button>` : ''}</div>
- <div class="card"><h4>Preferences</h4>
-  <div class="field"><label>Currency</label><select disabled><option>SAR — Saudi Riyal (default)</option></select></div>
-  <div class="field"><label>Theme</label><select onchange="setTheme(this.value)"><option value="light" ${STATE.theme === 'light' ? 'selected' : ''}>Light</option><option value="dark" ${STATE.theme === 'dark' ? 'selected' : ''}>Dark</option></select></div>
-  <div class="field"><label>Language</label><select onchange="setLang(this.value)"><option value="en" ${STATE.lang === 'en' ? 'selected' : ''}>English</option><option value="ar" ${STATE.lang === 'ar' ? 'selected' : ''}>العربية (RTL)</option></select></div></div></div>`;
+   <div class="field"><label>${L('Country', 'الدولة')}</label><input value="${esc(STATE.org.country)}" onchange="STATE.org.country=this.value"></div>
+   <div class="field"><label>${L('City', 'المدينة')}</label><input value="${esc(STATE.org.city)}" onchange="STATE.org.city=this.value"></div></div>
+  <div class="field"><label>${L('Branches (comma separated)', 'الفروع (مفصولة بفواصل)')}</label><input value="${esc(STATE.org.branches.join(', '))}" onchange="STATE.org.branches=this.value.split(',').map(x=>x.trim()).filter(Boolean);render()"></div>
+  <div class="field"><label>${L('Monthly rent (SAR)', 'الإيجار الشهري (ر.س)')}</label><input type="number" value="${STATE.rent}" onchange="STATE.rent=+this.value;render()"></div>
+  ${STATE._orgId ? `<button class="btn btn-line btn-sm" onclick="saveOrgSettings()">${L('Save to database', 'حفظ في قاعدة البيانات')}</button>` : ''}</div>
+ <div class="card"><h4>${L('Preferences', 'التفضيلات')}</h4>
+  <div class="field"><label>${L('Currency', 'العملة')}</label><select disabled><option>${L('SAR — Saudi Riyal (default)', 'ر.س — الريال السعودي (افتراضي)')}</option></select></div>
+  <div class="field"><label>${L('Theme', 'المظهر')}</label><select onchange="setTheme(this.value)"><option value="light" ${STATE.theme === 'light' ? 'selected' : ''}>${L('Light', 'فاتح')}</option><option value="dark" ${STATE.theme === 'dark' ? 'selected' : ''}>${L('Dark', 'داكن')}</option></select></div>
+  <div class="field"><label>${L('Language', 'اللغة')}</label><select onchange="setLang(this.value)"><option value="en" ${STATE.lang === 'en' ? 'selected' : ''}>English</option><option value="ar" ${STATE.lang === 'ar' ? 'selected' : ''}>العربية</option></select></div></div></div>`;
 
 async function saveOrgSettings() {
   if (!STATE._orgId) return;
   await DB.saveOrgState(STATE._orgId, STATE);
-  toast('Settings saved to database');
+  toast(L('Settings saved to database', 'تم حفظ الإعدادات في قاعدة البيانات'));
 }
 
 // ── User management ───────────────────────────────────────────
@@ -388,30 +389,30 @@ PAGES.recipe = () => {
 PAGES.ing = () => {
   if (!STATE.ings.length) return emptyMenuState();
   const estN = STATE.ings.filter(i => i.est).length;
-  return `${estN ? `<div class="alert warn"><span>◆</span><div><b>${estN} ingredient price(s) are AI estimates.</b> For accurate costing, set your real purchase prices below or process an invoice in Procurement — every recipe recosts instantly.</div></div>` : ''}
-  <div class="card" style="margin-bottom:13px"><h4>Import / export ingredients <span class="note">Excel-compatible</span></h4>
+  return `${estN ? `<div class="alert warn"><span>◆</span><div><b>${L(estN + ' ingredient price(s) are AI estimates.', estN + ' من أسعار المكونات تقديرات ذكاء اصطناعي.')}</b> ${L('For accurate costing, set your real purchase prices below or process an invoice in Procurement — every recipe recosts instantly.', 'لتكلفة دقيقة، اضبط أسعار الشراء الفعلية بالأسفل أو عالج فاتورة في المشتريات — تُعاد تكلفة كل وصفة فوراً.')}</div></div>` : ''}
+  <div class="card" style="margin-bottom:13px"><h4>${L('Import / export ingredients', 'استيراد / تصدير المكونات')} <span class="note">${L('Excel-compatible', 'متوافق مع Excel')}</span></h4>
    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <button class="btn btn-sm btn-line" onclick="exportIngredientsExcel()">⤓ Export to Excel</button>
-    <label class="btn btn-sm btn-line" style="margin:0">⤒ Import file (.xlsx/.csv)
+    <button class="btn btn-sm btn-line" onclick="exportIngredientsExcel()">${L('⤓ Export to Excel', '⤓ تصدير إلى Excel')}</button>
+    <label class="btn btn-sm btn-line" style="margin:0">${L('⤒ Import file (.xlsx/.csv)', '⤒ استيراد ملف (.xlsx/.csv)')}
      <input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importIngredientsFile(this)"></label>
-    <button class="btn btn-sm btn-line" onclick="ingredientImportModal()">⌨ Paste / import from URL</button>
-    <span class="note" style="margin-inline-start:auto">${STATE.ings.length} ingredient(s) · columns: Name, Supplier, Unit, Price (SAR), Yield %</span>
+    <button class="btn btn-sm btn-line" onclick="ingredientImportModal()">${L('⌨ Paste / import from URL', '⌨ لصق / استيراد من رابط')}</button>
+    <span class="note" style="margin-inline-start:auto">${STATE.ings.length} ${L('ingredient(s) · columns: Name, Supplier, Unit, Price (SAR), Yield %', 'مكوّن · الأعمدة: الاسم، المورّد، الوحدة، السعر (ر.س)، نسبة الإنتاجية %')}</span>
    </div></div>
-  <div class="card"><h4>Ingredient database <span class="note">prices are editable — every recipe recosts instantly</span></h4>
-  <table><tr><th>Ingredient</th><th>Supplier</th><th>Unit</th><th class="num">Price (SAR)</th><th class="num">Yield %</th><th>Trend</th><th class="num">Used in</th></tr>
-  ${STATE.ings.map(i => `<tr><td>${esc(i.n)}${i.est ? ' <span class="tag warn">estimate</span>' : ''}</td><td class="note">${esc(i.sup)}</td><td>${i.unit}</td>
+  <div class="card"><h4>${L('Ingredient database', 'قاعدة بيانات المكونات')} <span class="note">${L('prices are editable — every recipe recosts instantly', 'الأسعار قابلة للتعديل — تُعاد تكلفة كل وصفة فوراً')}</span></h4>
+  <table><tr><th>${L('Ingredient', 'المكوّن')}</th><th>${L('Supplier', 'المورّد')}</th><th>${L('Unit', 'الوحدة')}</th><th class="num">${L('Price (SAR)', 'السعر (ر.س)')}</th><th class="num">${L('Yield %', 'الإنتاجية %')}</th><th>${L('Trend', 'الاتجاه')}</th><th class="num">${L('Used in', 'مستخدم في')}</th></tr>
+  ${STATE.ings.map(i => `<tr><td>${esc(i.n)}${i.est ? ` <span class="tag warn">${L('estimate', 'تقدير')}</span>` : ''}</td><td class="note">${esc(i.sup)}</td><td>${i.unit}</td>
    <td class="num"><input class="tbl-edit" type="number" step="0.5" value="${i.price}" onchange="updIngPrice(${q(i.id)},+this.value)"></td>
    <td class="num"><input class="tbl-edit" type="number" step="1" value="${Math.round((i.yield || 1) * 100)}" onchange="STATE.ings.find(x=>x.id===${q(i.id)}).yield=+this.value/100;render()"></td>
-   <td>${spark(i.hist)}</td><td class="num">${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} recipes</td></tr>`).join('')}</table></div>`;
+   <td>${spark(i.hist)}</td><td class="num">${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} ${L('recipes', 'وصفة')}</td></tr>`).join('')}</table></div>`;
 };
 
 function updIngPrice(id, p) {
   const i = STATE.ings.find(x => x.id === id); const old = i.price; i.price = p; i.est = false;
   i.hist.push({ d: 'now', p }); if (i.hist.length > 8) i.hist.shift();
   if (p > old * 1.05) {
-    STATE.notifications.unshift({ t: 'Procurement Analyst', m: `${i.n} up ${pct((p / old - 1) * 100)} — ${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} recipes recosted. Check cheaper suppliers.`, k: 'bad', time: 'now' });
-    toast(`${i.n} +${pct((p / old - 1) * 100)} — alert raised & recipes recosted`, 'bad');
-  } else toast('Price updated — recipes recosted');
+    STATE.notifications.unshift({ t: L('Procurement Analyst', 'محلل المشتريات'), m: L(`${i.n} up ${pct((p / old - 1) * 100)} — ${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} recipes recosted. Check cheaper suppliers.`, `${i.n} ارتفع ${pct((p / old - 1) * 100)} — أُعيد حساب ${STATE.menu.filter(m => m.recipe.some(r => r[0] === i.id)).length} وصفة. ابحث عن موردين أرخص.`), k: 'bad', time: 'now' });
+    toast(L(`${i.n} +${pct((p / old - 1) * 100)} — alert raised & recipes recosted`, `${i.n} +${pct((p / old - 1) * 100)} — تم رفع تنبيه وإعادة حساب الوصفات`), 'bad');
+  } else toast(L('Price updated — recipes recosted', 'تم تحديث السعر — أُعيد حساب الوصفات'));
   render();
 }
 
@@ -626,38 +627,55 @@ PAGES.hidden = () => {
     <button class="btn btn-sm btn-navy" onclick="if(!$('hcN').value.trim()||!+$('hcA').value){toast('Name and amount required','bad')}else{STATE.hidden.push({id:uid(),n:$('hcN').value.trim(),grp:$('hcG').value,amt:+$('hcA').value});render();toast('Cost line added')}">+ Add</button></div></div>`;
 };
 
-// ── Marketing Costs ───────────────────────────────────────────
+// ── Marketing & Packaging ─────────────────────────────────────
 PAGES.mktg = () => {
   const rows = STATE.hidden.filter(h => h.grp === 'Marketing');
   const tot = hiddenGroup('Marketing'); const t = STATE.menu.length ? totals() : null;
   const B = STATE.budget || (STATE.budget = { food: 32, labor: 20, mkt: 5 }); if (B.mkt === undefined) B.mkt = 5;
   const pctRev = t ? tot / t.rev * 100 : 0;
+  const packTotal = STATE.menu.reduce((a, m) => a + (m.pack || 0) * m.sold, 0);
   return `<div class="grid g4">
-   ${kpi('Marketing / month', SAR(tot), rows.length + ' line items')}
-   ${kpi('% of revenue', t ? pct(pctRev) : '—', 'target ' + B.mkt + '%', t ? (pctRev <= B.mkt ? 'up' : 'down') : '')}
-   ${kpi('Avg per dish', t ? SAR2(tot / totalUnits()) : '—', 'revenue-share allocation')}
-   ${kpi('Delivery app marketing', pct(STATE.apps.reduce((a, x) => a + x.mkt * x.share, 0) / (STATE.apps.reduce((a, x) => a + x.share, 0) || 1)), 'blended · set per platform in Delivery Apps')}</div>
-  <div class="card" style="margin-top:13px"><h4>Marketing cost lines <span class="note">editable — they flow into every dish's marketing layer</span></h4>
-   <table><tr><th>Item</th><th class="num">SAR / month</th><th></th></tr>
+   ${kpi(L('Marketing / month', 'التسويق / شهر'), SAR(tot), rows.length + L(' line items', ' بند'))}
+   ${kpi(L('% of revenue', '% من الإيرادات'), t ? pct(pctRev) : '—', L('target ', 'الهدف ') + B.mkt + '%', t ? (pctRev <= B.mkt ? 'up' : 'down') : '')}
+   ${kpi(L('Packaging / month', 'التغليف / شهر'), t ? SAR(Math.round(packTotal)) : '—', L('across all dishes', 'لكل الأصناف'))}
+   ${kpi(L('Delivery app marketing', 'تسويق تطبيقات التوصيل'), pct(STATE.apps.reduce((a, x) => a + x.mkt * x.share, 0) / (STATE.apps.reduce((a, x) => a + x.share, 0) || 1)), L('blended · set per platform in Delivery Apps', 'مدمج · يُضبط لكل منصة في تطبيقات التوصيل'))}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Marketing cost lines', 'بنود تكاليف التسويق')} <span class="note">${L('editable — they flow into every dish marketing layer', 'قابلة للتعديل — تتوزع على طبقة التسويق لكل صنف')}</span></h4>
+   <table><tr><th>${L('Item', 'البند')}</th><th class="num">${L('SAR / month', 'ر.س / شهر')}</th><th></th></tr>
    ${rows.map(h => `<tr><td><input class="tbl-edit" style="width:240px;text-align:start" value="${esc(h.n)}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).n=this.value"></td>
-    <td class="num"><input class="tbl-edit" type="number" value="${h.amt}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).amt=+this.value;render();toast('Marketing allocation updated across all dishes')"></td>
-    <td><button class="btn btn-sm btn-danger" onclick="STATE.hidden=STATE.hidden.filter(x=>x.id!==${q(h.id)});render();toast('Marketing line removed','bad')">✕</button></td></tr>`).join('') || '<tr><td colspan="3" class="note">No marketing lines yet — add your first below.</td></tr>'}</table>
+    <td class="num"><input class="tbl-edit" type="number" value="${h.amt}" onchange="STATE.hidden.find(x=>x.id===${q(h.id)}).amt=+this.value;render();toast(L('Marketing allocation updated across all dishes','تم تحديث توزيع التسويق على كل الأصناف'))"></td>
+    <td><button class="btn btn-sm btn-danger" onclick="STATE.hidden=STATE.hidden.filter(x=>x.id!==${q(h.id)});render();toast(L('Marketing line removed','تم حذف بند التسويق'),'bad')">✕</button></td></tr>`).join('') || `<tr><td colspan="3" class="note">${L('No marketing lines yet — add your first below.', 'لا توجد بنود تسويق بعد — أضف أول بند بالأسفل.')}</td></tr>`}</table>
    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
-    <input class="tbl-edit" id="mkN" style="width:230px;text-align:start" placeholder="e.g. Influencer campaign — Riyadh Season">
-    <input class="tbl-edit" id="mkA" type="number" placeholder="SAR/mo" style="width:110px">
-    <button class="btn btn-sm btn-navy" onclick="addMktLine()">+ Add marketing cost</button></div></div>
+    <input class="tbl-edit" id="mkN" style="width:230px;text-align:start" placeholder="${L('e.g. Influencer campaign — Riyadh Season', 'مثال: حملة مؤثرين — موسم الرياض')}">
+    <input class="tbl-edit" id="mkA" type="number" placeholder="${L('SAR/mo', 'ر.س/شهر')}" style="width:110px">
+    <button class="btn btn-sm btn-navy" onclick="addMktLine()">${L('+ Add marketing cost', '+ إضافة تكلفة تسويق')}</button></div></div>
+  <div class="card" style="margin-top:13px"><h4>${L('Packaging cost per item', 'تكلفة التغليف لكل صنف')} <span class="note">${L('box / bag / cup cost per dish — flows into the packaging layer', 'تكلفة العلبة / الكيس / الكوب لكل صنف — تدخل في طبقة التغليف')}</span></h4>
+   ${STATE.menu.length ? `<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+     <span class="note">${L('Set all items to:', 'ضبط كل الأصناف على:')}</span>
+     <input class="tbl-edit" id="packAll" type="number" step="0.1" placeholder="${L('SAR', 'ر.س')}" style="width:100px">
+     <button class="btn btn-sm btn-line" onclick="setAllPackaging()">${L('Apply to all', 'تطبيق على الكل')}</button></div>
+    <table><tr><th>${L('Item', 'الصنف')}</th><th>${L('Category', 'التصنيف')}</th><th class="num">${L('Packaging (SAR)', 'التغليف (ر.س)')}</th><th class="num">${L('Sold/mo', 'المباع/شهر')}</th><th class="num">${L('Monthly packaging', 'التغليف الشهري')}</th></tr>
+    ${STATE.menu.map(m => `<tr><td>${esc(m.n)}</td><td class="note">${esc(m.cat)}</td>
+      <td class="num"><input class="tbl-edit" type="number" step="0.1" value="${m.pack}" onchange="m_(${q(m.id)}).pack=Math.max(0,+this.value);render();toast(L('Packaging cost updated — dish recosted','تم تحديث تكلفة التغليف — أُعيد حساب الصنف'))"></td>
+      <td class="num">${fmt(m.sold)}</td><td class="num">${SAR2((m.pack || 0) * m.sold)}</td></tr>`).join('')}</table>`
+    : `<p class="note">${L('Add menu items first to manage packaging costs.', 'أضف أصناف القائمة أولاً لإدارة تكاليف التغليف.')}</p>`}</div>
   <div class="grid g2" style="margin-top:13px">
-   <div class="card"><h4>Marketing budget</h4>
-    <div class="field"><label>Target marketing % of revenue</label><input type="number" step="0.5" value="${B.mkt}" onchange="STATE.budget.mkt=+this.value;render()"></div>
-    ${t ? `<div class="alert ${pctRev <= B.mkt ? 'good' : 'bad'}"><span>${pctRev <= B.mkt ? '✓' : '▲'}</span><div>Actual ${pct(pctRev)} vs target ${B.mkt}% — ${pctRev <= B.mkt ? 'on budget.' : 'over by ' + pct(pctRev - B.mkt) + ' (' + SAR(Math.round(tot - t.rev * B.mkt / 100)) + '/month).'}</div></div>` : '<p class="note">Import your menu to compare against revenue.</p>'}
+   <div class="card"><h4>${L('Marketing budget', 'ميزانية التسويق')}</h4>
+    <div class="field"><label>${L('Target marketing % of revenue', 'نسبة التسويق المستهدفة من الإيرادات %')}</label><input type="number" step="0.5" value="${B.mkt}" onchange="STATE.budget.mkt=+this.value;render()"></div>
+    ${t ? `<div class="alert ${pctRev <= B.mkt ? 'good' : 'bad'}"><span>${pctRev <= B.mkt ? '✓' : '▲'}</span><div>${L('Actual', 'الفعلي')} ${pct(pctRev)} ${L('vs target', 'مقابل الهدف')} ${B.mkt}% — ${pctRev <= B.mkt ? L('on budget.', 'ضمن الميزانية.') : L('over by ', 'تجاوز بمقدار ') + pct(pctRev - B.mkt) + ' (' + SAR(Math.round(tot - t.rev * B.mkt / 100)) + L('/month).', '/شهر).')}</div></div>` : `<p class="note">${L('Import your menu to compare against revenue.', 'استورد قائمتك لمقارنتها بالإيرادات.')}</p>`}
    </div>
-   <div class="card"><h4>How marketing flows into costing</h4>
-    <p class="note">Each dish carries a marketing layer = monthly marketing pool × the dish's revenue share. Delivery-app marketing fees are <b>not</b> in this pool — they're charged per order inside the delivery layer so nothing is double-counted.</p></div></div>`;
+   <div class="card"><h4>${L('How these flow into costing', 'كيف تدخل هذه في حساب التكلفة')}</h4>
+    <p class="note">${L('Each dish carries a marketing layer = monthly marketing pool × the dish revenue share, plus a packaging cost charged per plate sold. Delivery-app marketing fees are <b>not</b> in the marketing pool — they are charged per order inside the delivery layer so nothing is double-counted.', 'يحمل كل صنف طبقة تسويق = إجمالي التسويق الشهري × حصة الصنف من الإيرادات، بالإضافة إلى تكلفة تغليف تُحتسب لكل طبق مُباع. رسوم تسويق تطبيقات التوصيل <b>ليست</b> ضمن مجمع التسويق — تُحتسب لكل طلب داخل طبقة التوصيل حتى لا يتكرر الاحتساب.')}</p></div></div>`;
 };
 function addMktLine() {
   const n = $('mkN').value.trim(), a = +$('mkA').value;
-  if (!n || !a) { toast('Name and monthly amount required', 'bad'); return; }
-  STATE.hidden.push({ id: uid(), n, grp: 'Marketing', amt: a }); render(); toast('Marketing cost added — all dishes recosted');
+  if (!n || !a) { toast(L('Name and monthly amount required', 'الاسم والمبلغ الشهري مطلوبان'), 'bad'); return; }
+  STATE.hidden.push({ id: uid(), n, grp: 'Marketing', amt: a }); render(); toast(L('Marketing cost added — all dishes recosted', 'تمت إضافة تكلفة التسويق — أُعيد حساب كل الأصناف'));
+}
+function setAllPackaging() {
+  const v = +$('packAll').value;
+  if (!(v >= 0) || $('packAll').value === '') { toast(L('Enter a packaging amount', 'أدخل مبلغ التغليف'), 'bad'); return; }
+  STATE.menu.forEach(m => { m.pack = v; });
+  render(); toast(L('Packaging set for all ' + STATE.menu.length + ' items', 'تم ضبط التغليف لكل ' + STATE.menu.length + ' صنف'));
 }
 
 // ── Delivery Apps ─────────────────────────────────────────────
@@ -761,37 +779,37 @@ PAGES.rentutil = () => {
   const total = STATE.rent * rt.months;
   const e = STATE.elec || (STATE.elec = { included: true, amt: 0 });
   const w = STATE.water || (STATE.water = { included: true, amt: 0 });
-  const utilCard = (key, label) => {
+  const utilCard = (key, label, arLabel) => {
     const u = STATE[key];
-    return `<div class="card"><h4>${label} <span class="tag ${u.included ? 'ok' : 'warn'}">${u.included ? 'in rent' : 'billed separately'}</span></h4>
-     <div class="field"><label>Is ${label.toLowerCase()} included in the rent?</label>
-      <select onchange="STATE.${key}.included=(this.value==='yes');render();toast('${label} setting updated — costs recalculated')">
-       <option value="yes" ${u.included ? 'selected' : ''}>Yes — included in rent</option>
-       <option value="no" ${!u.included ? 'selected' : ''}>No — separate monthly bill</option></select></div>
+    return `<div class="card"><h4>${L(label, arLabel)} <span class="tag ${u.included ? 'ok' : 'warn'}">${u.included ? L('in rent', 'ضمن الإيجار') : L('billed separately', 'فاتورة منفصلة')}</span></h4>
+     <div class="field"><label>${L('Is ' + label.toLowerCase() + ' included in the rent?', 'هل ' + arLabel + ' مشمولة في الإيجار؟')}</label>
+      <select onchange="STATE.${key}.included=(this.value==='yes');render();toast(L('${label} setting updated — costs recalculated','تم تحديث إعداد ${arLabel} — أُعيد حساب التكاليف'))">
+       <option value="yes" ${u.included ? 'selected' : ''}>${L('Yes — included in rent', 'نعم — مشمولة في الإيجار')}</option>
+       <option value="no" ${!u.included ? 'selected' : ''}>${L('No — separate monthly bill', 'لا — فاتورة شهرية منفصلة')}</option></select></div>
      ${u.included
-       ? `<p class="note">${label} is part of the rent above, so it is not added again as a separate cost.</p>`
-       : `<div class="field"><label>${label} bill (SAR / month)</label><input type="number" min="0" value="${u.amt}" onchange="STATE.${key}.amt=Math.max(0,+this.value);render();toast('${label} bill updated — all dishes recosted')"></div>`}
+       ? `<p class="note">${L(label + ' is part of the rent above, so it is not added again as a separate cost.', arLabel + ' جزء من الإيجار أعلاه، لذلك لا تُضاف مرة أخرى كتكلفة منفصلة.')}</p>`
+       : `<div class="field"><label>${L(label + ' bill (SAR / month)', 'فاتورة ' + arLabel + ' (ر.س / شهر)')}</label><input type="number" min="0" value="${u.amt}" onchange="STATE.${key}.amt=Math.max(0,+this.value);render();toast(L('${label} bill updated — all dishes recosted','تم تحديث فاتورة ${arLabel} — أُعيد حساب كل الأصناف'))"></div>`}
     </div>`;
   };
   return `<div class="grid g4">
-   ${kpi('Monthly rent', SAR(STATE.rent))}
-   ${kpi('Lease length', rt.months + ' mo', monthLabel(rt.start) + ' →')}
-   ${kpi('Total lease value', SAR(total), STATE.rent + ' × ' + rt.months)}
-   ${kpi('Remaining', remaining + ' mo', elapsed + ' mo elapsed', remaining <= 2 ? 'down' : '')}</div>
-  <div class="card" style="margin-top:13px"><h4>Rent contract <span class="note">rent can change — update it and every dish recosts</span></h4>
+   ${kpi(L('Monthly rent', 'الإيجار الشهري'), SAR(STATE.rent))}
+   ${kpi(L('Lease length', 'مدة العقد'), rt.months + L(' mo', ' شهر'), monthLabel(rt.start) + ' →')}
+   ${kpi(L('Total lease value', 'إجمالي قيمة العقد'), SAR(total), STATE.rent + ' × ' + rt.months)}
+   ${kpi(L('Remaining', 'المتبقي'), remaining + L(' mo', ' شهر'), elapsed + L(' mo elapsed', ' شهر مضت'), remaining <= 2 ? 'down' : '')}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Rent contract', 'عقد الإيجار')} <span class="note">${L('rent can change — update it and every dish recosts', 'الإيجار قابل للتغيير — حدّثه ليُعاد حساب كل صنف')}</span></h4>
    <div class="grid g3">
-    <div class="field"><label>Monthly rent (SAR)</label><input type="number" min="0" value="${STATE.rent}" onchange="STATE.rent=Math.max(0,+this.value);render();toast('Rent updated — all dishes recosted')"></div>
-    <div class="field"><label>Lease duration (months)</label><input type="number" min="1" value="${rt.months}" onchange="STATE.rentTerm.months=Math.max(1,+this.value||1);render()"></div>
-    <div class="field"><label>Lease start month</label><input type="month" value="${rt.start}" onchange="STATE.rentTerm.start=this.value||curMonth();render()"></div></div>
-   ${remaining <= 2 ? `<div class="alert warn"><span>◆</span><div>Lease ends in <b>${remaining} month(s)</b> (${monthLabel(nextMonthsFrom(rt.start, rt.months))}). Budget for renewal or a rent change.</div></div>` : ''}
-   <p class="note">Rent is allocated to each dish by revenue share. Changing the monthly figure updates margins everywhere instantly; the lease length & start are used for renewal alerts and total-commitment tracking.</p></div>
-  <div class="grid g2" style="margin-top:13px">${utilCard('elec', 'Electricity')}${utilCard('water', 'Water')}</div>
-  <div class="card" style="margin-top:13px"><h4>How this flows into costing</h4>
-   <p class="note">Electricity and water marked <b>“billed separately”</b> are added to the Utilities cost pool and spread across dishes by revenue share. Marked <b>“in rent”</b>, they contribute nothing extra — the rent already covers them — so nothing is double-counted.</p>
+    <div class="field"><label>${L('Monthly rent (SAR)', 'الإيجار الشهري (ر.س)')}</label><input type="number" min="0" value="${STATE.rent}" onchange="STATE.rent=Math.max(0,+this.value);render();toast(L('Rent updated — all dishes recosted','تم تحديث الإيجار — أُعيد حساب كل الأصناف'))"></div>
+    <div class="field"><label>${L('Lease duration (months)', 'مدة العقد (أشهر)')}</label><input type="number" min="1" value="${rt.months}" onchange="STATE.rentTerm.months=Math.max(1,+this.value||1);render()"></div>
+    <div class="field"><label>${L('Lease start month', 'شهر بداية العقد')}</label><input type="month" value="${rt.start}" onchange="STATE.rentTerm.start=this.value||curMonth();render()"></div></div>
+   ${remaining <= 2 ? `<div class="alert warn"><span>◆</span><div>${L('Lease ends in', 'ينتهي العقد خلال')} <b>${remaining} ${L('month(s)', 'شهر')}</b> (${monthLabel(nextMonthsFrom(rt.start, rt.months))}). ${L('Budget for renewal or a rent change.', 'خصّص ميزانية للتجديد أو لتغيير الإيجار.')}</div></div>` : ''}
+   <p class="note">${L('Rent is allocated to each dish by revenue share. Changing the monthly figure updates margins everywhere instantly; the lease length & start are used for renewal alerts and total-commitment tracking.', 'يُوزّع الإيجار على كل صنف حسب حصته من الإيرادات. تغيير المبلغ الشهري يُحدّث الهوامش فوراً في كل مكان؛ وتُستخدم مدة العقد وبدايته لتنبيهات التجديد وتتبع إجمالي الالتزام.')}</p></div>
+  <div class="grid g2" style="margin-top:13px">${utilCard('elec', 'Electricity', 'الكهرباء')}${utilCard('water', 'Water', 'المياه')}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('How this flows into costing', 'كيف يدخل هذا في حساب التكلفة')}</h4>
+   <p class="note">${L('Electricity and water marked <b>“billed separately”</b> are added to the Utilities cost pool and spread across dishes by revenue share. Marked <b>“in rent”</b>, they contribute nothing extra — the rent already covers them — so nothing is double-counted.', 'الكهرباء والمياه المحددة كـ<b>«فاتورة منفصلة»</b> تُضاف إلى مجمع تكاليف المرافق وتُوزّع على الأصناف حسب حصة الإيرادات. أما المحددة كـ<b>«ضمن الإيجار»</b> فلا تضيف شيئاً — الإيجار يغطيها — فلا يتكرر الاحتساب.')}</p>
    <div class="grid g3" style="margin-top:8px">
-    ${kpi('Electricity in costing', e.included ? 'SAR 0' : SAR(e.amt), e.included ? 'covered by rent' : 'per month')}
-    ${kpi('Water in costing', w.included ? 'SAR 0' : SAR(w.amt), w.included ? 'covered by rent' : 'per month')}
-    ${kpi('Utilities pool total', SAR(hiddenGroup('Utilities') + utilMonthly()), 'incl. gas & other')}</div></div>`;
+    ${kpi(L('Electricity in costing', 'الكهرباء في التكلفة'), e.included ? L('SAR 0', '0 ر.س') : SAR(e.amt), e.included ? L('covered by rent', 'مغطاة بالإيجار') : L('per month', 'شهرياً'))}
+    ${kpi(L('Water in costing', 'المياه في التكلفة'), w.included ? L('SAR 0', '0 ر.س') : SAR(w.amt), w.included ? L('covered by rent', 'مغطاة بالإيجار') : L('per month', 'شهرياً'))}
+    ${kpi(L('Utilities pool total', 'إجمالي مجمع المرافق'), SAR(hiddenGroup('Utilities') + utilMonthly()), L('incl. gas & other', 'شاملاً الغاز وغيره'))}</div></div>`;
 };
 function nextMonthsFrom(start, n) { let s = start; for (let i = 0; i < n; i++) s = nextMonth(s); return s; }
 
@@ -804,37 +822,37 @@ PAGES.xfees = () => {
   const unpaid = oneNow.filter(f => !f.paid);
   const isCur = em === curMonth();
   return `<div class="grid g4">
-   ${kpi('Recurring / month', SAR(xfeesRecurring()), monthly.length + ' line(s)')}
-   ${kpi('One-time this month', SAR(xfeesOneTime()), oneNow.length + ' charge(s)')}
-   ${kpi('Total into costs', SAR(Math.round(xfeesMonthly())), 'this evaluation month')}
-   ${kpi('Unpaid one-time', unpaid.length, unpaid.length ? SAR(unpaid.reduce((a, f) => a + f.amt, 0)) + ' outstanding' : 'all settled', unpaid.length ? 'down' : 'up')}</div>
-  <div class="card" style="margin-top:13px"><h4>Evaluation month <span class="note">one-time fines only count in their own month</span></h4>
+   ${kpi(L('Recurring / month', 'متكرر / شهر'), SAR(xfeesRecurring()), monthly.length + L(' line(s)', ' بند'))}
+   ${kpi(L('One-time this month', 'لمرة واحدة هذا الشهر'), SAR(xfeesOneTime()), oneNow.length + L(' charge(s)', ' رسم'))}
+   ${kpi(L('Total into costs', 'الإجمالي في التكاليف'), SAR(Math.round(xfeesMonthly())), L('this evaluation month', 'شهر التقييم الحالي'))}
+   ${kpi(L('Unpaid one-time', 'غير مدفوعة لمرة واحدة'), unpaid.length, unpaid.length ? SAR(unpaid.reduce((a, f) => a + f.amt, 0)) + L(' outstanding', ' مستحقة') : L('all settled', 'كلها مسددة'), unpaid.length ? 'down' : 'up')}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Evaluation month', 'شهر التقييم')} <span class="note">${L('one-time fines only count in their own month', 'الغرامات لمرة واحدة تُحتسب في شهرها فقط')}</span></h4>
    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
     <button class="btn btn-sm btn-line" onclick="changeEvalMonth(-1)">← ${monthLabel(prevMonth(em))}</button>
-    <b style="font-family:var(--mono);font-size:16px">${monthLabel(em)}${isCur ? ' · current' : ''}</b>
+    <b style="font-family:var(--mono);font-size:16px">${monthLabel(em)}${isCur ? L(' · current', ' · الحالي') : ''}</b>
     <button class="btn btn-sm btn-line" onclick="changeEvalMonth(1)">${monthLabel(nextMonth(em))} →</button>
-    <button class="btn btn-sm btn-navy" style="margin-inline-start:auto" onclick="closeMonth()">Close month & roll forward →</button></div>
-   <p class="note" style="margin-top:9px">A one-time fee (e.g. a municipality fine) is charged in the month you log it. Once you roll forward, it is automatically dropped from the next month's cost — paid or not it no longer inflates future margins.</p>
-   ${unpaid.length ? `<div class="alert warn"><span>◆</span><div><b>${unpaid.length} one-time fee(s) still marked unpaid</b> for ${monthLabel(em)} — settle them or they stay flagged when you roll the month forward.</div></div>` : ''}</div>
-  <div class="card" style="margin-top:13px"><h4>Fee lines</h4>
-   <table><tr><th>Fee</th><th>Type</th><th>Month</th><th class="num">SAR / mo</th><th>Paid</th><th></th></tr>
+    <button class="btn btn-sm btn-navy" style="margin-inline-start:auto" onclick="closeMonth()">${L('Close month & roll forward →', 'إغلاق الشهر والانتقال للتالي →')}</button></div>
+   <p class="note" style="margin-top:9px">${L('A one-time fee (e.g. a municipality fine) is charged in the month you log it. Once you roll forward, it is automatically dropped from the next month cost — paid or not it no longer inflates future margins.', 'الرسم لمرة واحدة (مثل غرامة بلدية) يُحتسب في الشهر الذي تسجله فيه. وبمجرد الانتقال للشهر التالي يُسقط تلقائياً من تكلفة الشهر التالي — سواء سُدّد أو لا، لن يضخّم الهوامش مستقبلاً.')}</p>
+   ${unpaid.length ? `<div class="alert warn"><span>◆</span><div><b>${unpaid.length} ${L('one-time fee(s) still marked unpaid', 'رسم لمرة واحدة لا يزال غير مدفوع')}</b> ${L('for', 'لشهر')} ${monthLabel(em)} — ${L('settle them or they stay flagged when you roll the month forward.', 'سدّدها أو ستبقى موسومة عند الانتقال للشهر التالي.')}</div></div>` : ''}</div>
+  <div class="card" style="margin-top:13px"><h4>${L('Fee lines', 'بنود الرسوم')}</h4>
+   <table><tr><th>${L('Fee', 'الرسم')}</th><th>${L('Type', 'النوع')}</th><th>${L('Month', 'الشهر')}</th><th class="num">${L('SAR / mo', 'ر.س / شهر')}</th><th>${L('Paid', 'مدفوع')}</th><th></th></tr>
    ${list.length ? list.map(f => `<tr>
      <td><input class="tbl-edit" style="width:210px;text-align:start" value="${esc(f.n)}" onchange="xfeeField(${q(f.id)},'n',this.value)">${f.note ? `<div class="note">${esc(f.note)}</div>` : ''}</td>
-     <td><span class="tag ${f.type === 'monthly' ? 'info' : 'warn'}">${f.type === 'monthly' ? 'Recurring' : 'One-time'}</span></td>
-     <td class="note">${f.type === 'monthly' ? 'every month' : monthLabel(f.month)}</td>
-     <td class="num"><input class="tbl-edit" type="number" value="${f.amt}" onchange="xfeeField(${q(f.id)},'amt',Math.max(0,+this.value));render();toast('Extra fees updated — dishes recosted')"></td>
+     <td><span class="tag ${f.type === 'monthly' ? 'info' : 'warn'}">${f.type === 'monthly' ? L('Recurring', 'متكرر') : L('One-time', 'لمرة واحدة')}</span></td>
+     <td class="note">${f.type === 'monthly' ? L('every month', 'كل شهر') : monthLabel(f.month)}</td>
+     <td class="num"><input class="tbl-edit" type="number" value="${f.amt}" onchange="xfeeField(${q(f.id)},'amt',Math.max(0,+this.value));render();toast(L('Extra fees updated — dishes recosted','تم تحديث الرسوم الإضافية — أُعيد حساب الأصناف'))"></td>
      <td>${f.type === 'onetime' ? `<input type="checkbox" ${f.paid ? 'checked' : ''} onchange="xfeeField(${q(f.id)},'paid',this.checked)">` : '<span class="note">—</span>'}</td>
      <td><button class="btn btn-sm btn-danger" onclick="delXfee(${q(f.id)})">✕</button></td></tr>`).join('')
-   : '<tr><td colspan="6" class="note">No extra fees yet — add one below or pick a common Saudi fee.</td></tr>'}</table>
+   : `<tr><td colspan="6" class="note">${L('No extra fees yet — add one below or pick a common Saudi fee.', 'لا توجد رسوم إضافية بعد — أضف واحداً بالأسفل أو اختر رسماً سعودياً شائعاً.')}</td></tr>`}</table>
    <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center">
-    <input class="tbl-edit" id="xfN" style="width:230px;text-align:start" placeholder="e.g. Civil Defense violation fine">
-    <select class="tbl-edit" id="xfT" style="width:130px;text-align:start"><option value="monthly">Recurring</option><option value="onetime">One-time / fine</option></select>
-    <input class="tbl-edit" id="xfA" type="number" placeholder="SAR" style="width:100px">
-    <button class="btn btn-sm btn-navy" onclick="addXfee()">+ Add fee</button></div></div>
-  <div class="card" style="margin-top:13px"><h4>Common Saudi restaurant fees <span class="note">tap to add — typical amounts, fully editable</span></h4>
+    <input class="tbl-edit" id="xfN" style="width:230px;text-align:start" placeholder="${L('e.g. Civil Defense violation fine', 'مثال: غرامة مخالفة الدفاع المدني')}">
+    <select class="tbl-edit" id="xfT" style="width:130px;text-align:start"><option value="monthly">${L('Recurring', 'متكرر')}</option><option value="onetime">${L('One-time / fine', 'لمرة واحدة / غرامة')}</option></select>
+    <input class="tbl-edit" id="xfA" type="number" placeholder="${L('SAR', 'ر.س')}" style="width:100px">
+    <button class="btn btn-sm btn-navy" onclick="addXfee()">${L('+ Add fee', '+ إضافة رسم')}</button></div></div>
+  <div class="card" style="margin-top:13px"><h4>${L('Common Saudi restaurant fees', 'رسوم مطاعم سعودية شائعة')} <span class="note">${L('tap to add — typical amounts, fully editable', 'انقر للإضافة — مبالغ تقريبية قابلة للتعديل')}</span></h4>
    <div style="display:flex;gap:7px;flex-wrap:wrap">
-    ${XFEE_SUGGESTIONS.map((s, i) => `<button class="chip" onclick="addXfeeSuggestion(${i})">${esc(s[0])} <span class="note">· ${s[1] === 'onetime' ? 'fine' : '/mo'} · ~${fmt(s[2])}</span></button>`).join('')}</div>
-   <p class="note" style="margin-top:10px">Fine ranges from Saudi municipal regulations: hygiene SAR 200–4,000 · health certificate SAR 200–2,000 · staff hygiene SAR 400–2,000 · operating without a licence SAR 10,000–50,000. Amounts are starting points — set your actual figure.</p></div>`;
+    ${XFEE_SUGGESTIONS.map((s, i) => `<button class="chip" onclick="addXfeeSuggestion(${i})">${esc(L(s[0], s[3]))} <span class="note">· ${s[1] === 'onetime' ? L('fine', 'غرامة') : L('/mo', '/شهر')} · ~${fmt(s[2])}</span></button>`).join('')}</div>
+   <p class="note" style="margin-top:10px">${L('Fine ranges from Saudi municipal regulations: hygiene SAR 200–4,000 · health certificate SAR 200–2,000 · staff hygiene SAR 400–2,000 · operating without a licence SAR 10,000–50,000. Amounts are starting points — set your actual figure.', 'نطاقات الغرامات من الأنظمة البلدية السعودية: النظافة 200–4,000 ر.س · الشهادة الصحية 200–2,000 ر.س · النظافة الشخصية للموظفين 400–2,000 ر.س · العمل بدون ترخيص 10,000–50,000 ر.س. المبالغ نقاط بداية — اضبط رقمك الفعلي.')}</p></div>`;
 };
 const prevMonth = ym => { let [y, m] = ym.split('-').map(Number); m--; if (m < 1) { m = 12; y--; } return `${y}-${String(m).padStart(2, '0')}`; };
 function xfeeField(id, k, v) { const f = STATE.xfees.find(x => x.id === id); if (!f) return; f[k] = v; if (k === 'paid') render(); }
@@ -844,20 +862,20 @@ function closeMonth() {
   const unpaid = STATE.xfees.filter(f => f.type === 'onetime' && f.month === em && !f.paid);
   STATE.evalMonth = nextMonth(em);
   render();
-  toast(`Rolled forward to ${monthLabel(STATE.evalMonth)} — one-time charges from ${monthLabel(em)} dropped` + (unpaid.length ? ` (${unpaid.length} still unpaid)` : ''), unpaid.length ? 'bad' : 'good');
+  toast(L(`Rolled forward to ${monthLabel(STATE.evalMonth)} — one-time charges from ${monthLabel(em)} dropped`, `تم الانتقال إلى ${monthLabel(STATE.evalMonth)} — أُسقطت رسوم مرة واحدة من ${monthLabel(em)}`) + (unpaid.length ? L(` (${unpaid.length} still unpaid)`, ` (${unpaid.length} غير مدفوعة)`) : ''), unpaid.length ? 'bad' : 'good');
 }
 function addXfee() {
   const n = $('xfN').value.trim(), type = $('xfT').value, amt = +$('xfA').value;
-  if (!n || !amt) { toast('Name and amount required', 'bad'); return; }
+  if (!n || !amt) { toast(L('Name and amount required', 'الاسم والمبلغ مطلوبان'), 'bad'); return; }
   STATE.xfees.push({ id: uid(), n, amt, type, paid: false, month: type === 'onetime' ? STATE.evalMonth : null, note: '' });
-  render(); toast('Extra fee added — dishes recosted');
+  render(); toast(L('Extra fee added — dishes recosted', 'تمت إضافة رسم إضافي — أُعيد حساب الأصناف'));
 }
 function addXfeeSuggestion(i) {
   const s = XFEE_SUGGESTIONS[i];
-  STATE.xfees.push({ id: uid(), n: s[0], amt: s[2], type: s[1], paid: false, month: s[1] === 'onetime' ? STATE.evalMonth : null, note: '' });
-  render(); toast(`"${s[0]}" added — edit the amount to your actual figure`);
+  STATE.xfees.push({ id: uid(), n: L(s[0], s[3]), amt: s[2], type: s[1], paid: false, month: s[1] === 'onetime' ? STATE.evalMonth : null, note: '' });
+  render(); toast(L(`"${s[0]}" added — edit the amount to your actual figure`, `تمت إضافة "${s[3]}" — عدّل المبلغ إلى رقمك الفعلي`));
 }
-function delXfee(id) { STATE.xfees = STATE.xfees.filter(f => f.id !== id); render(); toast('Fee removed', 'bad'); }
+function delXfee(id) { STATE.xfees = STATE.xfees.filter(f => f.id !== id); render(); toast(L('Fee removed', 'تم حذف الرسم'), 'bad'); }
 
 // ── Live Market Rates ─────────────────────────────────────────
 function marketIngredients() {
@@ -872,35 +890,35 @@ PAGES.market = () => {
   const mk = STATE.market;
   const yourDel = blendedAppRate() * 100;
   const benchRows = [
-    ['Delivery commission (blended)', pct(yourDel), `${MARKET_FALLBACK.delivery.lo}–${MARKET_FALLBACK.delivery.hi}%`, yourDel > MARKET_FALLBACK.delivery.hi ? 'down' : 'up'],
-    ['VAT (ZATCA)', '15%', '15%', ''],
-    ['Electricity tariff', STATE.elec && !STATE.elec.included ? SAR(STATE.elec.amt) + '/mo' : 'in rent', `${MARKET_FALLBACK.electricity.lo}–${MARKET_FALLBACK.electricity.hi} SAR/kWh`, ''],
-    ['Water tariff', STATE.water && !STATE.water.included ? SAR(STATE.water.amt) + '/mo' : 'in rent', `${MARKET_FALLBACK.water.lo}–${MARKET_FALLBACK.water.hi} SAR/m³`, ''],
-    ['F&B rent benchmark', SAR(STATE.rent) + '/mo', `${fmt(MARKET_FALLBACK.rentSqm.lo)}–${fmt(MARKET_FALLBACK.rentSqm.hi)} SAR/m²/yr`, ''],
+    [L('Delivery commission (blended)', 'عمولة التوصيل (المدمجة)'), pct(yourDel), `${MARKET_FALLBACK.delivery.lo}–${MARKET_FALLBACK.delivery.hi}%`, yourDel > MARKET_FALLBACK.delivery.hi ? 'down' : 'up'],
+    [L('VAT (ZATCA)', 'ضريبة القيمة المضافة (زاتكا)'), '15%', '15%', ''],
+    [L('Electricity tariff', 'تعرفة الكهرباء'), STATE.elec && !STATE.elec.included ? SAR(STATE.elec.amt) + L('/mo', '/شهر') : L('in rent', 'ضمن الإيجار'), `${MARKET_FALLBACK.electricity.lo}–${MARKET_FALLBACK.electricity.hi}${L(' SAR/kWh', ' ر.س/ك.و.س')}`, ''],
+    [L('Water tariff', 'تعرفة المياه'), STATE.water && !STATE.water.included ? SAR(STATE.water.amt) + L('/mo', '/شهر') : L('in rent', 'ضمن الإيجار'), `${MARKET_FALLBACK.water.lo}–${MARKET_FALLBACK.water.hi}${L(' SAR/m³', ' ر.س/م³')}`, ''],
+    [L('F&B rent benchmark', 'مرجع إيجار المطاعم'), SAR(STATE.rent) + L('/mo', '/شهر'), `${fmt(MARKET_FALLBACK.rentSqm.lo)}–${fmt(MARKET_FALLBACK.rentSqm.hi)}${L(' SAR/m²/yr', ' ر.س/م²/سنة')}`, ''],
   ];
   const ingRows = STATE.ings.map(i => ({ i, band: marketBandFor(i.n) })).filter(x => x.band);
-  return `<div class="card"><h4>Live Market Rates <span class="tag gold">Market Agent</span> ${mk ? `<span class="tag ${mk.source === 'live' ? 'ok' : 'warn'}">${mk.source === 'live' ? 'live' : 'offline est.'} · ${mk.at}</span>` : '<span class="tag info">not fetched yet</span>'}</h4>
-   <p class="note" style="margin-bottom:12px">Benchmarks current market fees & ingredient prices for a <b>${esc(STATE.org.type)}</b> in <b>${esc(STATE.org.city)}</b> against your numbers. ${mk ? '' : 'Click refresh to pull live rates.'}</p>
-   <button class="btn btn-navy btn-sm" id="mkBtn" onclick="refreshMarket()">⟳ Refresh live rates</button>
-   <div id="mkTerm" class="note" style="margin-top:10px">${mk ? esc(mk.note || '') : 'Uses live web data server-side; falls back to Saudi market estimates if offline.'}</div></div>
-  <div class="card" style="margin-top:13px"><h4>Fees & utilities benchmark</h4>
-   <table><tr><th>Item</th><th class="num">Your rate</th><th class="num">Market range</th><th></th></tr>
+  return `<div class="card"><h4>${L('Live Market Rates', 'أسعار السوق المباشرة')} <span class="tag gold">${L('Market Agent', 'وكيل السوق')}</span> ${mk ? `<span class="tag ${mk.source === 'live' ? 'ok' : 'warn'}">${mk.source === 'live' ? L('live', 'مباشر') : L('offline est.', 'تقدير غير متصل')} · ${mk.at}</span>` : `<span class="tag info">${L('not fetched yet', 'لم تُجلب بعد')}</span>`}</h4>
+   <p class="note" style="margin-bottom:12px">${L('Benchmarks current market fees & ingredient prices for a', 'يقارن رسوم السوق وأسعار المكونات الحالية لـ')} <b>${esc(STATE.org.type)}</b> ${L('in', 'في')} <b>${esc(STATE.org.city)}</b> ${L('against your numbers.', 'بأرقامك.')} ${mk ? '' : L('Click refresh to pull live rates.', 'انقر تحديث لجلب الأسعار المباشرة.')}</p>
+   <button class="btn btn-navy btn-sm" id="mkBtn" onclick="refreshMarket()">${L('⟳ Refresh live rates', '⟳ تحديث الأسعار المباشرة')}</button>
+   <div id="mkTerm" class="note" style="margin-top:10px">${mk ? esc(mk.note || '') : L('Uses live web data server-side; falls back to Saudi market estimates if offline.', 'يستخدم بيانات الويب المباشرة من الخادم؛ ويعود لتقديرات السوق السعودي عند عدم التوفر.')}</div></div>
+  <div class="card" style="margin-top:13px"><h4>${L('Fees & utilities benchmark', 'مرجع الرسوم والمرافق')}</h4>
+   <table><tr><th>${L('Item', 'البند')}</th><th class="num">${L('Your rate', 'سعرك')}</th><th class="num">${L('Market range', 'نطاق السوق')}</th><th></th></tr>
    ${benchRows.map(r => `<tr><td>${r[0]}</td><td class="num ${r[3]}">${r[1]}</td><td class="num note">${r[2]}</td>
-    <td>${r[3] === 'down' ? '<span class="tag bad">above market</span>' : r[3] === 'up' ? '<span class="tag ok">competitive</span>' : ''}</td></tr>`).join('')}</table>
-   <p class="note" style="margin-top:9px">Delivery commission is the biggest controllable fee — anything above ${MARKET_FALLBACK.delivery.hi}% blended is worth renegotiating or steering to direct orders.</p></div>
-  <div class="card" style="margin-top:13px"><h4>Ingredient price benchmark <span class="note">${ingRows.length} of your ingredients matched to market categories</span></h4>
-   ${ingRows.length ? `<table><tr><th>Ingredient</th><th class="num">Your price</th><th class="num">Market /kg</th><th>Status</th><th></th></tr>
+    <td>${r[3] === 'down' ? `<span class="tag bad">${L('above market', 'أعلى من السوق')}</span>` : r[3] === 'up' ? `<span class="tag ok">${L('competitive', 'تنافسي')}</span>` : ''}</td></tr>`).join('')}</table>
+   <p class="note" style="margin-top:9px">${L('Delivery commission is the biggest controllable fee — anything above', 'عمولة التوصيل أكبر رسم يمكن التحكم به — أي قيمة أعلى من')} ${MARKET_FALLBACK.delivery.hi}% ${L('blended is worth renegotiating or steering to direct orders.', 'مدمجة تستحق إعادة التفاوض أو التوجيه للطلبات المباشرة.')}</p></div>
+  <div class="card" style="margin-top:13px"><h4>${L('Ingredient price benchmark', 'مرجع أسعار المكونات')} <span class="note">${L(ingRows.length + ' of your ingredients matched to market categories', ingRows.length + ' من مكوناتك مطابقة لفئات السوق')}</span></h4>
+   ${ingRows.length ? `<table><tr><th>${L('Ingredient', 'المكوّن')}</th><th class="num">${L('Your price', 'سعرك')}</th><th class="num">${L('Market /kg', 'السوق /كجم')}</th><th>${L('Status', 'الحالة')}</th><th></th></tr>
    ${ingRows.map(({ i, band }) => {
      const mid = (band.lo + band.hi) / 2, over = i.price > band.hi, under = i.price < band.lo;
      return `<tr><td>${esc(i.n)}</td><td class="num ${over ? 'down' : 'up'}">${SAR2(i.price)}</td>
       <td class="num note">${band.lo}–${band.hi}</td>
-      <td><span class="tag ${over ? 'bad' : under ? 'info' : 'ok'}">${over ? 'above market' : under ? 'below range' : 'in range'}</span></td>
-      <td>${over ? `<button class="btn btn-sm btn-line" onclick="updIngPrice(${q(i.id)},${mid.toFixed(2)})">Set to market ${SAR2(mid)}</button>` : ''}</td></tr>`;
-   }).join('')}</table>` : '<p class="note">No ingredients matched the market categories yet. Import or add ingredients (fish, chicken, rice, dairy…) to see benchmarks.</p>'}</div>`;
+      <td><span class="tag ${over ? 'bad' : under ? 'info' : 'ok'}">${over ? L('above market', 'أعلى من السوق') : under ? L('below range', 'أقل من النطاق') : L('in range', 'ضمن النطاق')}</span></td>
+      <td>${over ? `<button class="btn btn-sm btn-line" onclick="updIngPrice(${q(i.id)},${mid.toFixed(2)})">${L('Set to market', 'ضبط على السوق')} ${SAR2(mid)}</button>` : ''}</td></tr>`;
+   }).join('')}</table>` : `<p class="note">${L('No ingredients matched the market categories yet. Import or add ingredients (fish, chicken, rice, dairy…) to see benchmarks.', 'لا توجد مكونات مطابقة لفئات السوق بعد. استورد أو أضف مكونات (سمك، دجاج، أرز، ألبان…) لرؤية المراجع.')}</p>`}</div>`;
 };
 async function refreshMarket() {
   const btn = $('mkBtn'), term = $('mkTerm');
-  if (btn) { btn.disabled = true; btn.textContent = '⟳ Fetching live rates…'; }
+  if (btn) { btn.disabled = true; btn.textContent = L('⟳ Fetching live rates…', '⟳ جلب الأسعار المباشرة…'); }
   try {
     const res = await fetch('/api/market-rates', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -908,11 +926,11 @@ async function refreshMarket() {
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Market service error');
-    STATE.market = { source: 'live', at: new Date().toLocaleDateString('en-US'), note: data.note || 'Live market rates retrieved.', ingredients: data.ingredients || marketIngredients() };
-    toast('Live market rates updated');
+    STATE.market = { source: 'live', at: new Date().toLocaleDateString(isAr() ? 'ar-SA' : 'en-US'), note: data.note || L('Live market rates retrieved.', 'تم جلب أسعار السوق المباشرة.'), ingredients: data.ingredients || marketIngredients() };
+    toast(L('Live market rates updated', 'تم تحديث أسعار السوق المباشرة'));
   } catch (err) {
-    STATE.market = { source: 'offline', at: new Date().toLocaleDateString('en-US'), note: MARKET_FALLBACK.note + ' (' + err.message + ')', ingredients: marketIngredients() };
-    toast('Live service unavailable — showing Saudi market estimates', 'bad');
+    STATE.market = { source: 'offline', at: new Date().toLocaleDateString(isAr() ? 'ar-SA' : 'en-US'), note: (isAr() ? 'تقديرات السوق السعودي غير المتصلة' : MARKET_FALLBACK.note) + ' (' + err.message + ')', ingredients: marketIngredients() };
+    toast(L('Live service unavailable — showing Saudi market estimates', 'الخدمة المباشرة غير متاحة — عرض تقديرات السوق السعودي'), 'bad');
   }
   render();
 }
@@ -926,7 +944,7 @@ function exportIngredientsExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Ingredients');
     XLSX.writeFile(wb, fname + '_ingredients.xlsx');
-    toast('Exported ' + rows.length + ' ingredients to Excel');
+    toast(L('Exported ' + rows.length + ' ingredients to Excel', 'تم تصدير ' + rows.length + ' مكوّن إلى Excel'));
     return;
   }
   // CSV fallback (opens in Excel) with UTF-8 BOM
@@ -934,7 +952,7 @@ function exportIngredientsExcel() {
   const csvEsc = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
   const csv = '﻿' + [head.join(','), ...rows.map(r => head.map(h => csvEsc(r[h])).join(','))].join('\n');
   downloadBlob(csv, fname + '_ingredients.csv', 'text/csv;charset=utf-8');
-  toast('Exported ' + rows.length + ' ingredients (CSV)');
+  toast(L('Exported ' + rows.length + ' ingredients (CSV)', 'تم تصدير ' + rows.length + ' مكوّن (CSV)'));
 }
 function downloadBlob(content, filename, type) {
   const blob = new Blob([content], { type });
@@ -992,7 +1010,7 @@ function applyIngredientRows(rows) {
     }
   });
   render();
-  toast(`Import done — ${added} added, ${updated} price(s) updated` + (recosted.size ? `, ${recosted.size} recipe(s) recosted` : ''));
+  toast(L(`Import done — ${added} added, ${updated} price(s) updated`, `تم الاستيراد — أُضيف ${added}، حُدّث ${updated} سعر`) + (recosted.size ? L(`, ${recosted.size} recipe(s) recosted`, `، أُعيد حساب ${recosted.size} وصفة`) : ''));
 }
 function importIngredientsFile(input) {
   const file = input.files && input.files[0]; if (!file) return;
@@ -1005,16 +1023,16 @@ function importIngredientsFile(input) {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const arr = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
         const objs = rowsToObjects(arr.map(r => r.map(c => c == null ? '' : c)));
-        if (!objs.length) { toast('No "name + price" rows found in the sheet', 'bad'); return; }
+        if (!objs.length) { toast(L('No "name + price" rows found in the sheet', 'لم يُعثر على صفوف "اسم + سعر" في الورقة'), 'bad'); return; }
         applyIngredientRows(objs);
-      } catch (err) { toast('Could not read Excel file: ' + err.message, 'bad'); }
+      } catch (err) { toast(L('Could not read Excel file: ', 'تعذّر قراءة ملف Excel: ') + err.message, 'bad'); }
     };
     reader.readAsArrayBuffer(file);
   } else {
     const reader = new FileReader();
     reader.onload = e => {
       const objs = rowsToObjects(parseCSV(String(e.target.result)));
-      if (!objs.length) { toast('No "name + price" rows found', 'bad'); return; }
+      if (!objs.length) { toast(L('No "name + price" rows found', 'لم يُعثر على صفوف "اسم + سعر"'), 'bad'); return; }
       applyIngredientRows(objs);
     };
     reader.readAsText(file);
@@ -1022,16 +1040,16 @@ function importIngredientsFile(input) {
   input.value = '';
 }
 function ingredientImportModal() {
-  modal(`<h3>Import ingredients</h3>
-   <div class="field"><label>Paste rows — one per line as <b>name, price, unit</b> (or tab/space separated)</label>
+  modal(`<h3>${L('Import ingredients', 'استيراد المكونات')}</h3>
+   <div class="field"><label>${L('Paste rows — one per line as <b>name, price, unit</b> (or tab/space separated)', 'الصق الصفوف — صف لكل سطر بصيغة <b>الاسم، السعر، الوحدة</b> (أو مفصولة بمسافة/جدولة)')}</label>
     <textarea id="igPaste" rows="6" placeholder="Hamour fish, 62, kg&#10;Shrimp peeled 58 kg&#10;Rice, 7.5"></textarea></div>
-   <button class="btn btn-navy btn-sm" onclick="importIngredientsPaste()">Import pasted rows</button>
-   <div class="or">or pull from a supplier price-list URL</div>
-   <div class="field"><label>Supplier price-list / website URL</label><input id="igUrl" placeholder="https://supplier.sa/pricelist"></div>
-   <div class="term" id="igTerm" style="height:90px;margin-bottom:14px">› Idle.</div>
+   <button class="btn btn-navy btn-sm" onclick="importIngredientsPaste()">${L('Import pasted rows', 'استيراد الصفوف الملصقة')}</button>
+   <div class="or">${L('or pull from a supplier price-list URL', 'أو اجلب من رابط قائمة أسعار مورّد')}</div>
+   <div class="field"><label>${L('Supplier price-list / website URL', 'رابط قائمة أسعار المورّد / الموقع')}</label><input id="igUrl" placeholder="https://supplier.sa/pricelist"></div>
+   <div class="term" id="igTerm" style="height:90px;margin-bottom:14px">${L('› Idle.', '› في وضع الانتظار.')}</div>
    <div style="display:flex;gap:9px;justify-content:flex-end">
-    <button class="btn btn-line" onclick="closeModal()">Close</button>
-    <button class="btn btn-gold" onclick="importIngredientsUrl()">▶ Extract from URL</button></div>`);
+    <button class="btn btn-line" onclick="closeModal()">${L('Close', 'إغلاق')}</button>
+    <button class="btn btn-gold" onclick="importIngredientsUrl()">${L('▶ Extract from URL', '▶ استخراج من الرابط')}</button></div>`);
 }
 function parseIngredientText(text) {
   return text.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
@@ -1047,24 +1065,24 @@ function parseIngredientText(text) {
 function importIngredientsPaste() {
   const txt = ($('igPaste') && $('igPaste').value) || '';
   const objs = parseIngredientText(txt);
-  if (!objs.length) { toast('No "name + price" rows detected', 'bad'); return; }
+  if (!objs.length) { toast(L('No "name + price" rows detected', 'لم تُكتشف صفوف "اسم + سعر"'), 'bad'); return; }
   closeModal(); applyIngredientRows(objs);
 }
 async function importIngredientsUrl() {
   const url = ($('igUrl') && $('igUrl').value.trim()) || '';
   const term = $('igTerm');
-  if (!url.startsWith('http')) { toast('Enter a valid URL', 'bad'); return; }
-  if (term) term.innerHTML = `› Fetching <b>${esc(url)}</b> server-side…`;
+  if (!url.startsWith('http')) { toast(L('Enter a valid URL', 'أدخل رابطاً صحيحاً'), 'bad'); return; }
+  if (term) term.innerHTML = L(`› Fetching <b>${esc(url)}</b> server-side…`, `› يجري جلب <b>${esc(url)}</b> من الخادم…`);
   try {
     const res = await fetch('/api/fetch-prices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Extraction failed');
     const objs = (data.items || []).map(it => ({ n: it.name, price: it.price, unit: (it.unit || '').toLowerCase(), sup: it.supplier || '', yield: NaN })).filter(o => o.n && o.price > 0);
-    if (!objs.length) { if (term) term.innerHTML = '<span style="color:#FF9B8E">✗ No priced ingredients found on that page.</span>'; return; }
-    if (term) term.innerHTML = `<span class="g">✓</span> ${objs.length} ingredient(s) found — importing…`;
+    if (!objs.length) { if (term) term.innerHTML = `<span style="color:#FF9B8E">${L('✗ No priced ingredients found on that page.', '✗ لم يُعثر على مكونات مُسعّرة في تلك الصفحة.')}</span>`; return; }
+    if (term) term.innerHTML = `<span class="g">✓</span> ${L(objs.length + ' ingredient(s) found — importing…', objs.length + ' مكوّن — يجري الاستيراد…')}`;
     closeModal(); applyIngredientRows(objs);
   } catch (err) {
-    if (term) term.innerHTML = `<span style="color:#FF9B8E">✗ ${esc(err.message)}</span><br>Tip: paste the price list text instead.`;
-    toast('URL extraction failed: ' + err.message, 'bad');
+    if (term) term.innerHTML = `<span style="color:#FF9B8E">✗ ${esc(err.message)}</span><br>${L('Tip: paste the price list text instead.', 'نصيحة: الصق نص قائمة الأسعار بدلاً من ذلك.')}`;
+    toast(L('URL extraction failed: ', 'فشل الاستخراج من الرابط: ') + err.message, 'bad');
   }
 }

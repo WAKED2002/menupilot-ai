@@ -122,6 +122,9 @@ function mLabel(m) {
   return hp && hq ? 'Star' : hp ? 'Puzzle' : hq ? 'Plow Horse' : 'Dog';
 }
 const mCls    = m => ({ Star: 'star', Puzzle: 'puzzle', 'Plow Horse': 'plow', Dog: 'dog' }[mLabel(m)]);
+// Display label (translated for Arabic); logic always uses the English mLabel().
+const MLABEL_AR = { Star: 'نجم', Puzzle: 'لغز', 'Plow Horse': 'حصان جرّار', Dog: 'كلب' };
+const mLabelD = m => (typeof isAr === 'function' && isAr()) ? MLABEL_AR[mLabel(m)] : mLabel(m);
 const mAction = m => ({
   Star:        'Promote — feature & protect, never discount',
   Puzzle:      'Reprice or reposition — bundle, photograph, move on menu',

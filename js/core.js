@@ -25,10 +25,16 @@ function nextMonth(ym) {
 
 /* ── i18n ────────────────────────────────────────────────────── */
 const I18N = {
-  en: { dash:'Dashboard',branch:'Branch Dashboard',menu:'Menu Items',cats:'Menu Categories',recipe:'Recipe Builder',ing:'Ingredient Center',sup:'Supplier Center',proc:'Procurement',inv:'Inventory',emp:'Employee Costs',gov:'Saudi Government Fees',hidden:'Hidden Costs',mktg:'Marketing Costs',apps:'Delivery Apps',rentutil:'Rent & Utilities',xfees:'Extra Fees & Fines',alloc:'Cost Allocation',market:'Live Market Rates',costing:'Menu Costing',pricing:'Pricing Center',eng:'Menu Engineering',scen:'Scenario Simulator',profit:'Profitability Center',reports:'Reports Center',copilot:'AI Copilot',settings:'Settings',usersP:'User Management',billing:'Subscription & Billing',overview:'Overview',menuG:'Menu & Recipes',costsG:'Cost Structure',intelG:'Intelligence',adminG:'Administration',search:'Search menu, ingredients, pages…',logout:'Log out' },
-  ar: { dash:'لوحة التحكم',branch:'لوحة الفرع',menu:'أصناف القائمة',cats:'تصنيفات القائمة',recipe:'منشئ الوصفات',ing:'مركز المكونات',sup:'مركز الموردين',proc:'المشتريات',inv:'المخزون',emp:'تكاليف الموظفين',gov:'الرسوم الحكومية السعودية',hidden:'التكاليف الخفية',mktg:'تكاليف التسويق',apps:'تطبيقات التوصيل',rentutil:'الإيجار والمرافق',xfees:'رسوم وغرامات إضافية',alloc:'توزيع التكاليف',market:'أسعار السوق المباشرة',costing:'تكلفة القائمة',pricing:'مركز التسعير',eng:'هندسة القائمة',scen:'محاكي السيناريوهات',profit:'مركز الربحية',reports:'التقارير',copilot:'المساعد الذكي',settings:'الإعدادات',usersP:'إدارة المستخدمين',billing:'الاشتراك والفوترة',overview:'نظرة عامة',menuG:'القائمة والوصفات',costsG:'هيكل التكاليف',intelG:'الذكاء',adminG:'الإدارة',search:'ابحث في القائمة والمكونات…',logout:'تسجيل الخروج' }
+  en: { dash:'Dashboard',branch:'Branch Dashboard',menu:'Menu Items',cats:'Menu Categories',recipe:'Recipe Builder',ing:'Ingredient Center',sup:'Supplier Center',proc:'Procurement',inv:'Inventory',emp:'Employee Costs',gov:'Saudi Government Fees',hidden:'Hidden Costs',mktg:'Marketing & Packaging',apps:'Delivery Apps',rentutil:'Rent & Utilities',xfees:'Extra Fees & Fines',alloc:'Cost Allocation',market:'Live Market Rates',costing:'Menu Costing',pricing:'Pricing Center',eng:'Menu Engineering',scen:'Scenario Simulator',profit:'Profitability Center',reports:'Reports Center',copilot:'AI Copilot',settings:'Settings',usersP:'User Management',billing:'Subscription & Billing',overview:'Overview',menuG:'Menu & Recipes',costsG:'Cost Structure',intelG:'Intelligence',adminG:'Administration',search:'Search menu, ingredients, pages…',logout:'Log out' },
+  ar: { dash:'لوحة التحكم',branch:'لوحة الفرع',menu:'أصناف القائمة',cats:'تصنيفات القائمة',recipe:'منشئ الوصفات',ing:'مركز المكونات',sup:'مركز الموردين',proc:'المشتريات',inv:'المخزون',emp:'تكاليف الموظفين',gov:'الرسوم الحكومية السعودية',hidden:'التكاليف الخفية',mktg:'التسويق والتغليف',apps:'تطبيقات التوصيل',rentutil:'الإيجار والمرافق',xfees:'رسوم وغرامات إضافية',alloc:'توزيع التكاليف',market:'أسعار السوق المباشرة',costing:'تكلفة القائمة',pricing:'مركز التسعير',eng:'هندسة القائمة',scen:'محاكي السيناريوهات',profit:'مركز الربحية',reports:'التقارير',copilot:'المساعد الذكي',settings:'الإعدادات',usersP:'إدارة المستخدمين',billing:'الاشتراك والفوترة',overview:'نظرة عامة',menuG:'القائمة والوصفات',costsG:'هيكل التكاليف',intelG:'الذكاء',adminG:'الإدارة',search:'ابحث في القائمة والمكونات…',logout:'تسجيل الخروج' }
 };
 const T = k => I18N[STATE.lang][k] || k;
+
+// Inline bilingual string: returns the Arabic text when the UI is in Arabic,
+// otherwise the English text. Use for any user-facing string not in I18N.
+// In Arabic mode the app is 100% Arabic; in English mode it is 100% English.
+const L = (en, ar) => (typeof STATE !== 'undefined' && STATE && STATE.lang === 'ar' ? ar : en);
+const isAr = () => typeof STATE !== 'undefined' && STATE && STATE.lang === 'ar';
 
 /* ── Restaurant type templates ───────────────────────────────── */
 const TYPES = [
@@ -96,20 +102,20 @@ function suggestIngredients(name) {
    type 'monthly' = recurring overhead; 'onetime' = a one-off charge/fine
    that only affects the month it is logged in. amt = typical SAR value. */
 const XFEE_SUGGESTIONS = [
-  ['Grease trap cleaning', 'monthly', 350],
-  ['Pest control contract', 'monthly', 600],
-  ['Music / public-performance licensing', 'monthly', 450],
-  ['Security guard service', 'monthly', 2800],
-  ['Annual license amortized (Balady/CR)', 'monthly', 700],
-  ['Equipment maintenance contract', 'monthly', 900],
-  ['Loyalty / POS app subscription', 'monthly', 500],
-  ['Municipality hygiene fine', 'onetime', 2000],     // 200–4,000 SAR
-  ['Health-certificate violation fine', 'onetime', 1000], // 200–2,000 SAR
-  ['Staff personal-hygiene fine', 'onetime', 1200],   // 400–2,000 SAR
-  ['Civil Defense violation fine', 'onetime', 3000],
-  ['Labor office (Qiwa) penalty', 'onetime', 5000],
-  ['Signage / advertising violation', 'onetime', 2500],
-  ['Equipment breakdown repair', 'onetime', 1800],
+  ['Grease trap cleaning', 'monthly', 350, 'تنظيف مصيدة الشحوم'],
+  ['Pest control contract', 'monthly', 600, 'عقد مكافحة الحشرات'],
+  ['Music / public-performance licensing', 'monthly', 450, 'ترخيص الموسيقى / العرض العام'],
+  ['Security guard service', 'monthly', 2800, 'خدمة حارس الأمن'],
+  ['Annual license amortized (Balady/CR)', 'monthly', 700, 'الترخيص السنوي موزعاً (بلدي/سجل تجاري)'],
+  ['Equipment maintenance contract', 'monthly', 900, 'عقد صيانة المعدات'],
+  ['Loyalty / POS app subscription', 'monthly', 500, 'اشتراك تطبيق الولاء / نقاط البيع'],
+  ['Municipality hygiene fine', 'onetime', 2000, 'غرامة نظافة البلدية'],     // 200–4,000 SAR
+  ['Health-certificate violation fine', 'onetime', 1000, 'غرامة مخالفة الشهادة الصحية'], // 200–2,000 SAR
+  ['Staff personal-hygiene fine', 'onetime', 1200, 'غرامة النظافة الشخصية للموظفين'],   // 400–2,000 SAR
+  ['Civil Defense violation fine', 'onetime', 3000, 'غرامة مخالفة الدفاع المدني'],
+  ['Labor office (Qiwa) penalty', 'onetime', 5000, 'غرامة مكتب العمل (قوى)'],
+  ['Signage / advertising violation', 'onetime', 2500, 'مخالفة اللوحات / الإعلانات'],
+  ['Equipment breakdown repair', 'onetime', 1800, 'إصلاح عطل في المعدات'],
 ];
 
 /* ── Live-market fallback ranges (used if the market API is unreachable).

@@ -9,51 +9,52 @@ function pubNav() {
   return `<nav class="pub-nav">
   <button class="brand" onclick="go('landing')"><span class="mark">◔</span> MenuPilot AI</button>
   <div class="links">
-    <button onclick="go('features')">Features</button>
-    <button onclick="go('pricingPub')">Pricing</button>
-    <button onclick="go('login')">Log in</button>
+    <button onclick="go('features')">${L('Features', 'المزايا')}</button>
+    <button onclick="go('pricingPub')">${L('Pricing', 'الأسعار')}</button>
+    <button onclick="go('login')">${L('Log in', 'تسجيل الدخول')}</button>
   </div>
-  <div style="display:flex;gap:9px">
-    <button class="btn btn-ghost btn-sm" onclick="enterDemo()">Live demo</button>
-    <button class="btn btn-gold btn-sm" onclick="go('signup')">Get started</button>
+  <div style="display:flex;gap:9px;align-items:center">
+    <button class="btn btn-ghost btn-sm" onclick="setLang(STATE.lang==='en'?'ar':'en')">${STATE.lang === 'en' ? 'العربية' : 'English'}</button>
+    <button class="btn btn-ghost btn-sm" onclick="enterDemo()">${L('Live demo', 'تجربة مباشرة')}</button>
+    <button class="btn btn-gold btn-sm" onclick="go('signup')">${L('Get started', 'ابدأ الآن')}</button>
   </div></nav>`;
 }
 function pubFoot() {
-  return `<div class="pub-foot"><span>MenuPilot AI</span><span>Saudi-first · SAR · ZATCA-aware · Arabic ready</span></div>`;
+  return `<div class="pub-foot"><span>MenuPilot AI</span><span>${L('Saudi-first · SAR · ZATCA-aware · Arabic ready', 'سعودي أولاً · ر.س · متوافق مع زاتكا · جاهز للعربية')}</span></div>`;
 }
 
 PUB.landing = () => `<div class="pub">${pubNav()}
  <div class="hero">
   <div>
-   <div class="eyebrow">Restaurant Financial Intelligence · Saudi Arabia → GCC</div>
-   <h1>Know the <em>true cost</em> of every dish on your menu.</h1>
-   <div class="ar">اعرف التكلفة الحقيقية لكل طبق في قائمتك — وسعّره بثقة</div>
-   <p class="lead">8 AI agents read your menu, rebuild your recipes, layer in every Saudi cost — GOSI, Balady, ZATCA, delivery commissions, hidden overheads — and tell you what to charge, what to promote, and what to remove.</p>
+   <div class="eyebrow">${L('Restaurant Financial Intelligence · Saudi Arabia → GCC', 'ذكاء مالي للمطاعم · السعودية ← الخليج')}</div>
+   <h1>${L('Know the <em>true cost</em> of every dish on your menu.', 'اعرف <em>التكلفة الحقيقية</em> لكل طبق في قائمتك.')}</h1>
+   ${isAr() ? '' : `<div class="ar">اعرف التكلفة الحقيقية لكل طبق في قائمتك — وسعّره بثقة</div>`}
+   <p class="lead">${L('8 AI agents read your menu, rebuild your recipes, layer in every Saudi cost — GOSI, Balady, ZATCA, delivery commissions, hidden overheads — and tell you what to charge, what to promote, and what to remove.', '8 وكلاء ذكاء اصطناعي يقرؤون قائمتك، ويعيدون بناء وصفاتك، ويضيفون كل تكلفة سعودية — التأمينات (جوسي)، بلدي، زاتكا، عمولات التوصيل، المصاريف الخفية — ثم يخبرونك بالسعر المناسب، وما تروّج له، وما تحذفه.')}</p>
    <div style="display:flex;gap:12px;flex-wrap:wrap">
-    <button class="btn btn-gold" onclick="go('signup')">Start free — set up in 10 minutes</button>
-    <button class="btn btn-ghost" onclick="enterDemo()">Explore demo restaurant</button>
+    <button class="btn btn-gold" onclick="go('signup')">${L('Start free — set up in 10 minutes', 'ابدأ مجاناً — الإعداد في 10 دقائق')}</button>
+    <button class="btn btn-ghost" onclick="enterDemo()">${L('Explore demo restaurant', 'استكشف مطعم العرض التجريبي')}</button>
    </div>
    <div class="hero-stats">
-    <div class="hstat"><div class="n">8</div><div class="l">AI agents working for you</div></div>
-    <div class="hstat"><div class="n">20+</div><div class="l">Saudi government fees tracked</div></div>
-    <div class="hstat"><div class="n">11</div><div class="l">cost layers per menu item</div></div>
+    <div class="hstat"><div class="n">8</div><div class="l">${L('AI agents working for you', 'وكلاء ذكاء يعملون لأجلك')}</div></div>
+    <div class="hstat"><div class="n">20+</div><div class="l">${L('Saudi government fees tracked', 'رسوم حكومية سعودية مُتتبَّعة')}</div></div>
+    <div class="hstat"><div class="n">11</div><div class="l">${L('cost layers per menu item', 'طبقة تكلفة لكل صنف')}</div></div>
    </div>
   </div>
   <div class="dishcard">
-   <h3>Grilled Hamour <span class="price">SAR 89.00</span></h3>
-   <div class="sub">True cost · live from the Cost Analyst Agent</div>
-   ${[['Ingredients',92,'24.50'],['Direct labor',24,'6.18'],['Delivery alloc.',11,'2.85'],['Rent alloc.',26,'6.84'],['Utilities',9,'2.39'],['Gov. fees',13,'3.46'],['Marketing',4,'0.94'],['Waste alloc.',7,'1.64']].map((x, i) => `
+   <h3>${L('Grilled Hamour', 'هامور مشوي')} <span class="price">${L('SAR 89.00', '89.00 ر.س')}</span></h3>
+   <div class="sub">${L('True cost · live from the Cost Analyst Agent', 'التكلفة الحقيقية · مباشرة من وكيل تحليل التكلفة')}</div>
+   ${[[L('Ingredients','المكوّنات'),92,'24.50'],[L('Direct labor','العمالة المباشرة'),24,'6.18'],[L('Delivery alloc.','حصة التوصيل'),11,'2.85'],[L('Rent alloc.','حصة الإيجار'),26,'6.84'],[L('Utilities','المرافق'),9,'2.39'],[L('Gov. fees','رسوم حكومية'),13,'3.46'],[L('Marketing','التسويق'),4,'0.94'],[L('Waste alloc.','حصة الهدر'),7,'1.64']].map((x, i) => `
    <div class="layer"><span class="lbl">${x[0]}</span><div class="bar"><i style="width:${x[1]}%;animation-delay:.${i}s"></i></div><span class="val">${x[2]}</span></div>`).join('')}
-   <div class="dish-foot"><span>True cost <b style="color:#fff">SAR 49.62</b></span><span class="g">Net margin 44.2% ✓</span></div>
+   <div class="dish-foot"><span>${L('True cost', 'التكلفة الحقيقية')} <b style="color:#fff">${L('SAR 49.62', '49.62 ر.س')}</b></span><span class="g">${L('Net margin 44.2% ✓', 'الهامش الصافي 44.2% ✓')}</span></div>
   </div>
  </div>
  <div class="pub-section"><div class="inner">
-  <h2>Built like a CFO. Priced like an app.</h2>
-  <p class="sub2">From AI menu extraction to break-even analysis — one system for owners who want answers, not spreadsheets.</p>
+  <h2>${L('Built like a CFO. Priced like an app.', 'مبني كمدير مالي. بسعر تطبيق.')}</h2>
+  <p class="sub2">${L('From AI menu extraction to break-even analysis — one system for owners who want answers, not spreadsheets.', 'من استخراج القائمة بالذكاء الاصطناعي إلى تحليل نقطة التعادل — نظام واحد للملاك الذين يريدون إجابات لا جداول.')}</p>
   <div class="grid g3">
-   ${[['✦','AI onboarding','Paste your website or upload a menu — agents extract items, predict recipes, and build your cost base.'],
-      ['⬡','11-layer true costing','Ingredients with yield %, labor minutes, rent, GOSI, ZATCA, delivery commissions, waste — per dish.'],
-      ['◈','Pricing that defends margin','10 strategies with risk levels, including delivery-app pricing that survives 30% commissions.']].map(f => `
+   ${[['✦',L('AI onboarding','إعداد بالذكاء الاصطناعي'),L('Paste your website or upload a menu — agents extract items, predict recipes, and build your cost base.','الصق موقعك أو ارفع قائمة — يستخرج الوكلاء الأصناف ويتوقعون الوصفات ويبنون قاعدة تكاليفك.')],
+      ['⬡',L('11-layer true costing','تكلفة حقيقية بـ11 طبقة'),L('Ingredients with yield %, labor minutes, rent, GOSI, ZATCA, delivery commissions, waste — per dish.','المكونات بنسبة الإنتاجية، دقائق العمالة، الإيجار، جوسي، زاتكا، عمولات التوصيل، الهدر — لكل طبق.')],
+      ['◈',L('Pricing that defends margin','تسعير يحمي الهامش'),L('10 strategies with risk levels, including delivery-app pricing that survives 30% commissions.','10 استراتيجيات بمستويات مخاطرة، منها تسعير تطبيقات التوصيل الذي يصمد أمام عمولات 30%.')]].map(f => `
    <div class="card"><div style="font-size:22px;color:var(--gold)">${f[0]}</div><h4 style="margin:8px 0 6px">${f[1]}</h4><p class="note">${f[2]}</p></div>`).join('')}
   </div></div></div>
  ${pubFoot()}</div>`;

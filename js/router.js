@@ -179,15 +179,15 @@ function appShell(r) {
   <div>
    <div class="topbar">
     <div class="searchbox"><span class="sic">⌕</span><input id="gsearch" placeholder="${T('search')}" oninput="gSearch(this.value)"><div id="sres"></div></div>
-    <select class="orgsel" onchange="toast('Switched view: '+this.value)"><option>${esc(STATE.org.name)}</option><option>+ Add organization</option></select>
+    <select class="orgsel" onchange="toast(L('Switched view: ','تم تبديل العرض: ')+this.value)"><option>${esc(STATE.org.name)}</option><option>${L('+ Add organization', '+ إضافة منشأة')}</option></select>
     <span style="flex:1"></span>
     <button class="iconbtn" title="Language" onclick="setLang(STATE.lang==='en'?'ar':'en')">${STATE.lang === 'en' ? 'ع' : 'EN'}</button>
     <button class="iconbtn" title="Theme" onclick="setTheme(STATE.theme==='light'?'dark':'light')">${STATE.theme === 'light' ? '☾' : '☀'}</button>
     <button class="iconbtn" onclick="pops.notif=!pops.notif;pops.user=false;render()">⊙${STATE.notifications.length ? '<span class="dot"></span>' : ''}</button>
     <button class="avatar" onclick="pops.user=!pops.user;pops.notif=false;render()">${esc(STATE.user.n.split(' ').map(x => x[0]).join('').slice(0, 2))}</button>
-    ${pops.notif ? `<div class="pop right"><div class="ph"><b>Notifications</b> · agent alerts</div>
-      ${STATE.notifications.map(n => `<div class="pi"><span>${n.k === 'bad' ? '▲' : n.k === 'warn' ? '◆' : 'ℹ'}</span><div><b>${esc(n.t)}</b><small>${esc(n.m)}</small><small style="color:var(--gold)">${n.time} ago</small></div></div>`).join('') || '<div class="pi">No notifications.</div>'}
-      <button class="pi" style="color:var(--gold);font-weight:600" onclick="clearNotifs()">Clear all</button></div>` : ''}
+    ${pops.notif ? `<div class="pop right"><div class="ph"><b>${L('Notifications', 'الإشعارات')}</b> · ${L('agent alerts', 'تنبيهات الوكلاء')}</div>
+      ${STATE.notifications.map(n => `<div class="pi"><span>${n.k === 'bad' ? '▲' : n.k === 'warn' ? '◆' : 'ℹ'}</span><div><b>${esc(n.t)}</b><small>${esc(n.m)}</small><small style="color:var(--gold)">${L(n.time + ' ago', 'منذ ' + n.time)}</small></div></div>`).join('') || `<div class="pi">${L('No notifications.', 'لا توجد إشعارات.')}</div>`}
+      <button class="pi" style="color:var(--gold);font-weight:600" onclick="clearNotifs()">${L('Clear all', 'مسح الكل')}</button></div>` : ''}
     ${pops.user ? `<div class="pop right"><div class="ph"><b>${esc(STATE.user.n)}</b><br><span class="note">${esc(STATE.user.email)} · ${STATE.user.role}</span></div>
       <button class="pi" onclick="pops.user=false;go('settings')">⚙ <div>${T('settings')}</div></button>
       <button class="pi" onclick="pops.user=false;go('usersP')">⊟ <div>${T('usersP')}</div></button>
@@ -195,8 +195,8 @@ function appShell(r) {
       <button class="pi" style="color:var(--coral)" onclick="logout()">⏻ <div>${T('logout')}</div></button></div>` : ''}
    </div>
    <main class="main">
-    <div class="pagehead"><div><h2>${T(r)}</h2><div class="crumb">${esc(STATE.org.name)} · ${esc(STATE.org.city)} · ${STATE.org.branches.length} branch(es) · ${STATE.menu.length ? SAR(t.rev) + ' /mo' : 'no sales data yet'}</div></div>
-     <div style="display:flex;gap:8px;align-items:center"><span class="pill tag info">SAR</span><span class="tag ${STATE.plan === 'Growth' ? 'gold' : 'info'}">${STATE.plan} plan</span></div></div>
+    <div class="pagehead"><div><h2>${T(r)}</h2><div class="crumb">${esc(STATE.org.name)} · ${esc(STATE.org.city)} · ${STATE.org.branches.length} ${L('branch(es)', 'فرع')} · ${STATE.menu.length ? SAR(t.rev) + L(' /mo', ' / شهر') : L('no sales data yet', 'لا توجد بيانات مبيعات بعد')}</div></div>
+     <div style="display:flex;gap:8px;align-items:center"><span class="pill tag info">${L('SAR', 'ر.س')}</span><span class="tag ${STATE.plan === 'Growth' ? 'gold' : 'info'}">${L(STATE.plan + ' plan', 'باقة ' + STATE.plan)}</span></div></div>
     ${PAGES[r] ? PAGES[r]() : '<div class="empty"><h5>Page not found</h5></div>'}
    </main></div></div>`;
 }
@@ -218,9 +218,9 @@ async function clearNotifs() {
 }
 
 function emptyMenuState() {
-  return `<div class="card"><div class="empty"><div class="big">☰</div><h5>No menu yet</h5>
- <p style="max-width:44ch;margin:0 auto 14px">Run the Menu Extraction Agent on your website, Instagram, or a PDF menu — it builds your items, then Recipe Intelligence drafts the recipes.</p>
- <button class="btn btn-gold" onclick="STATE.ob.step=3;go('onboarding')">▶ Run AI onboarding</button></div></div>`;
+  return `<div class="card"><div class="empty"><div class="big">☰</div><h5>${L('No menu yet', 'لا توجد قائمة بعد')}</h5>
+ <p style="max-width:44ch;margin:0 auto 14px">${L('Run the Menu Extraction Agent on your website, Instagram, or a PDF menu — it builds your items, then Recipe Intelligence drafts the recipes.', 'شغّل وكيل استخراج القائمة على موقعك أو إنستغرام أو ملف PDF — يبني الأصناف، ثم يقوم وكيل ذكاء الوصفات بإعداد الوصفات.')}</p>
+ <button class="btn btn-gold" onclick="STATE.ob.step=3;go('onboarding')">${L('▶ Run AI onboarding', '▶ تشغيل الإعداد الذكي')}</button></div></div>`;
 }
 
 // Auth helpers (used by pages-public.js)
