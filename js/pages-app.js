@@ -8,40 +8,143 @@ const q = id => `'${id}'`;
 const m_ = id => STATE.menu.find(m => m.id === id);
 const g_ = id => STATE.gov.find(g => g.id === id);
 
-// ── Dashboard ─────────────────────────────────────────────────
+// ── Dashboard (Crextio-style overview) ────────────────────────
+// Restaurant logo upload (dashboard profile card). Stored as a data URL on
+// STATE.org.logo and cached in localStorage per org so it survives reloads.
+// (Cross-device persistence would need a Supabase column — see note to user.)
+function logoKey() { return 'mp_logo_' + (STATE._orgId || (STATE.org && STATE.org.id) || 'default'); }
+function uploadLogo(input) {
+  const f = input.files && input.files[0];
+  if (!f) return;
+  if (!/^image\//.test(f.type)) { toast(L('Please choose an image file', 'يرجى اختيار ملف صورة'), 'bad'); return; }
+  if (f.size > 1.5 * 1024 * 1024) { toast(L('Logo must be under 1.5 MB', 'يجب أن يكون الشعار أقل من 1.5 ميجابايت'), 'bad'); return; }
+  const r = new FileReader();
+  r.onload = () => { STATE.org.logo = r.result; try { localStorage.setItem(logoKey(), r.result); } catch (e) {} toast(L('Logo updated', 'تم تحديث الشعار')); render(); };
+  r.readAsDataURL(f);
+}
+
 PAGES.dash = () => {
   if (!STATE.menu.length) return emptyMenuState();
   const t = totals(), be = breakEven();
-  const best = [...STATE.menu].sort((a, b) => b.sold - a.sold).slice(0, 4);
-  const low  = [...STATE.menu].sort((a, b) => marginPct(a) - marginPct(b)).slice(0, 4);
+  const first = (STATE.user.n || L('there', 'بك')).split(' ')[0];
+  if (!STATE.org.logo) { try { const s = localStorage.getItem(logoKey()); if (s) STATE.org.logo = s; } catch (e) {} }
+  const clamp = n => Math.max(0, Math.min(100, isFinite(n) ? n : 0));
+
+  // Cost-allocation stacked bar — where every riyal of revenue goes
+  const segs = [
+    [L('Food', 'الطعام'),        clamp(t.foodPct),  'var(--gold)'],
+    [L('Labor', 'العمالة'),      clamp(t.laborPct), 'var(--ink)'],
+    [L('Rent', 'الإيجار'),       clamp(t.rentPct),  '#3D6485'],
+    [L('Delivery', 'التوصيل'),   clamp(t.delPct),   'var(--coral)'],
+  ];
+  const used = segs.reduce((a, s) => a + s[1], 0);
+  segs.push([L('Net margin', 'الهامش الصافي'), clamp(100 - used), 'var(--teal)']);
+
+  // Big counters
+  const stats = [
+    [STATE.menu.length, L('Menu items', 'أصناف')],
+    [STATE.ings.length, L('Ingredients', 'مكوّنات')],
+    [STATE.sups.length, L('Suppliers', 'موردون')],
+  ];
+
+  // Top items by revenue contribution (bar chart)
+  const items = [...STATE.menu].map(m => ({ n: m.n, v: m.price * m.sold })).sort((a, b) => b.v - a.v).slice(0, 7);
+  const vmax = Math.max(...items.map(i => i.v), 1);
+
+  // Break-even ring
+  const beP = clamp(t.rev / be.rev * 100);
+  const R = 52, C = 2 * Math.PI * R;
+
+  // Menu-optimization checklist (dark task card)
+  const optimal = m => m.status === 'approved' && marginPct(m) >= 20;
+  const ready = STATE.menu.filter(optimal);
+  const openItems = STATE.menu.filter(m => !optimal(m));
+  const taskRows = [
+    ...openItems.slice(0, 5).map(m => {
+      const reprice = marginPct(m) < 20;
+      return { done: false, t: esc(m.n), go: reprice ? 'pricing' : 'recipe', ic: reprice ? '◈' : '⚗',
+        s: reprice ? L('Margin ', 'الهامش ') + pct(marginPct(m)) + L(' — reprice', ' — أعد التسعير') : L('Recipe needs approval', 'الوصفة تحتاج اعتماد') };
+    }),
+    ...ready.slice(0, Math.max(0, 5 - openItems.length)).map(m => ({ done: true, t: esc(m.n), go: 'costing', ic: '✓',
+      s: L('Approved · margin ', 'معتمد · الهامش ') + pct(marginPct(m)) })),
+  ];
+
+  // Row-B data
   const need = STATE.menu.filter(m => marginPct(m) < 20);
   const pend = STATE.menu.filter(m => m.status !== 'approved');
   const alerts = STATE.ings.filter(i => i.hist.length > 1 && i.hist[i.hist.length - 1].p > i.hist[i.hist.length - 2].p * 1.05);
-  return `<div class="grid g5">
-  ${kpi(L('Revenue', 'الإيرادات'), SAR(t.rev), L('monthly', 'شهري'))}
-  ${kpi(L('Gross profit', 'إجمالي الربح'), SAR(Math.round(t.gross)), pct(t.gross / t.rev * 100) + L(' of revenue', ' من الإيرادات'), 'up')}
-  ${kpi(L('Net profit', 'صافي الربح'), SAR(Math.round(t.net)), L('after all 11 layers', 'بعد كل الطبقات الـ11'), t.net > 0 ? 'up' : 'down')}
-  ${kpi(L('Food cost %', 'نسبة تكلفة الطعام %'), pct(t.foodPct), L('target ≤ 32%', 'الهدف ≤ 32%'), t.foodPct <= 32 ? 'up' : 'down')}
-  ${kpi(L('Prime cost %', 'نسبة التكلفة الأولية %'), pct(t.primePct), L('food + labor', 'الطعام + العمالة'), t.primePct <= 60 ? 'up' : 'down')}</div>
- <div class="grid g5" style="margin-top:13px">
-  ${kpi(L('Labor cost %', 'نسبة العمالة %'), pct(t.laborPct))}${kpi(L('Rent cost %', 'نسبة الإيجار %'), pct(t.rentPct))}
-  ${kpi(L('Delivery commission', 'عمولة التوصيل'), pct(t.delPct), L('of revenue', 'من الإيرادات'))}
-  ${kpi(L('Gov. fees / month', 'الرسوم الحكومية / شهر'), SAR(Math.round(t.gov)), L('allocated per dish', 'موزعة على كل صنف'))}
-  ${kpi(L('Hidden costs / month', 'التكاليف الخفية / شهر'), SAR(Math.round(t.hidden)))}</div>
- <div class="grid g2" style="margin-top:13px">
-  <div class="card"><h4>${L('Items needing repricing', 'أصناف تحتاج إعادة تسعير')} <span class="tag ${need.length ? 'bad' : 'ok'}">${need.length}</span></h4>
-   ${need.length ? `<table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Margin', 'الهامش')}</th><th></th></tr>${need.map(m => `<tr><td>${esc(m.n)}</td><td class="num down">${pct(marginPct(m))}</td><td><button class="btn btn-sm btn-line" onclick="go('pricing')">${L('Open strategist', 'فتح المُسعّر')}</button></td></tr>`).join('')}</table>`
-   : `<div class="alert good"><span>✓</span><div>${L('All items above the 20% net-margin floor.', 'كل الأصناف فوق حد الهامش الصافي 20%.')}</div></div>`}
-   <h4 style="margin-top:16px">${L('Supplier price alerts', 'تنبيهات أسعار الموردين')} <span class="tag ${alerts.length ? 'warn' : 'ok'}">${alerts.length}</span></h4>
-   ${alerts.map(i => `<div class="alert warn"><span>◆</span><div><b>${esc(i.n)}</b> ${L('price up from', 'ارتفع السعر من')} ${SAR2(i.hist[i.hist.length - 2].p)} → ${SAR2(i.hist[i.hist.length - 1].p)} ${L('/kg.', '/كجم.')} ${i.hist.length > 0 ? spark(i.hist) : ''}</div></div>`).join('') || `<div class="note">${L('No price alerts.', 'لا توجد تنبيهات أسعار.')}</div>`}
-  </div>
-  <div class="card"><h4>${L('Break-even', 'نقطة التعادل')}</h4>
-   ${kpi(L('Break-even revenue', 'إيرادات التعادل'), SAR(Math.round(be.rev)), L('monthly threshold', 'الحد الشهري'))}
-   <div class="bartrack" style="margin:12px 0 8px"><i style="width:${Math.min(100, t.rev / be.rev * 100).toFixed(0)}%"></i></div>
-   <p class="note">${L('At', 'عند')} ${SAR(t.rev)} ${L('revenue —', 'إيرادات —')} ${t.rev > be.rev ? L('above', 'فوق') : L('below', 'تحت')} ${L('break-even by', 'التعادل بمقدار')} ${SAR(Math.round(Math.abs(t.rev - be.rev)))}. ${L('CMR:', 'نسبة هامش المساهمة:')} ${pct(be.cmr * 100)}.</p>
-   <h4 style="margin-top:16px">${L('Pending recipe approvals', 'وصفات بانتظار الاعتماد')} <span class="tag ${pend.length ? 'warn' : 'ok'}">${pend.length}</span></h4>
-   ${pend.slice(0, 3).map(m => `<div class="alert warn"><span>⚗</span><div><b>${esc(m.n)}</b> — ${L('recipe needs approval before costing is accurate.', 'تحتاج الوصفة إلى اعتماد قبل أن تكون التكلفة دقيقة.')} <button class="btn btn-sm btn-line" onclick="go('recipe')" style="margin-top:4px">${L('Review', 'مراجعة')}</button></div></div>`).join('')}
-  </div></div>`;
+
+  return `<div class="dashx">
+   <div class="dx-hero">
+    <h1>${L('Welcome back', 'مرحباً بعودتك')}, ${esc(first)} 👋</h1>
+    <p>${esc(STATE.org.name)} · ${esc(STATE.org.city)} · ${SAR(t.rev)} ${L('revenue / month', 'إيرادات / شهر')}</p>
+   </div>
+
+   <div class="dx-band">
+    <div class="dx-alloc-wrap">
+     <div class="dx-cap">${L('Where every riyal of revenue goes', 'إلى أين يذهب كل ريال من الإيراد')}</div>
+     <div class="dx-alloc">${segs.map(s => `<i style="width:${s[1]}%;background:${s[2]}" title="${s[0]} ${pct(s[1])}"></i>`).join('')}</div>
+     <div class="dx-legend">${segs.map(s => `<span><i style="background:${s[2]}"></i>${s[0]} <b>${pct(s[1])}</b></span>`).join('')}</div>
+    </div>
+    <div class="dx-stats">${stats.map(s => `<div class="dx-stat"><div class="n">${s[0]}</div><div class="l">${s[1]}</div></div>`).join('')}</div>
+   </div>
+
+   <div class="dx-top">
+    <div class="dcard profile" onclick="document.getElementById('logoUp').click()" title="${L('Click to upload your restaurant logo', 'انقر لرفع شعار مطعمك')}">
+     <input type="file" id="logoUp" accept="image/*" hidden onchange="uploadLogo(this)">
+     <span class="pf-pill" title="${L('Net profit / month', 'صافي الربح / شهر')}">${SAR(Math.round(t.net))}</span>
+     <div class="pf-logo">${STATE.org.logo ? `<img src="${STATE.org.logo}" alt="${esc(STATE.org.name)}">` : `<div class="pf-ph"><span>${esc((STATE.org.name || 'R').trim()[0] || 'R')}</span><small>${L('Click to upload logo', 'انقر لرفع الشعار')}</small></div>`}</div>
+     <div class="pf-meta"><div class="pf-name">${esc(STATE.org.name)}</div><div class="pf-role">${esc(STATE.org.type || L('Restaurant', 'مطعم'))} · ${esc(STATE.org.city || '')}</div></div>
+     ${STATE.org.logo ? `<span class="pf-edit">${L('⤓ Change logo', '⤓ تغيير الشعار')}</span>` : ''}
+    </div>
+    <div class="dx-cluster">
+    <div class="dcard feature">
+     <div class="ft-top"><span>${L('Net profit', 'صافي الربح')}</span><span class="pill">${pct(t.net / t.rev * 100)}</span></div>
+     <div class="ft-big">${SAR(Math.round(t.net))}</div>
+     <div class="ft-sub">${L('after all 11 cost layers · this month', 'بعد كل طبقات التكلفة الـ11 · هذا الشهر')}</div>
+     <div class="ft-row"><div><b>${SAR(Math.round(t.gross))}</b><span>${L('Gross profit', 'إجمالي الربح')}</span></div><div><b>${pct(t.foodPct)}</b><span>${L('Food cost', 'تكلفة الطعام')}</span></div></div>
+    </div>
+
+    <div class="dcard">
+     <div class="dc-h"><h4>${L('Top items', 'أعلى الأصناف')}</h4><button class="dc-go" title="${L('Menu engineering', 'هندسة القائمة')}" onclick="go('eng')">↗</button></div>
+     <div class="dx-bars">${items.map((it, i) => `<div class="bar"><i style="height:${Math.max(6, it.v / vmax * 100)}%${i === 0 ? ';background:var(--gold)' : ''}" title="${esc(it.n)} · ${SAR(Math.round(it.v))}"></i>${i === 0 ? `<span class="bub">${SAR(Math.round(it.v))}</span>` : ''}</div>`).join('')}</div>
+     <div class="dx-bars-x">${items.map(it => `<span>${esc(it.n).slice(0, 1)}</span>`).join('')}</div>
+    </div>
+
+    <div class="dcard">
+     <div class="dc-h"><h4>${L('Break-even', 'نقطة التعادل')}</h4></div>
+     <div class="ring">
+      <svg viewBox="0 0 130 130"><circle cx="65" cy="65" r="${R}" class="ring-bg"/><circle cx="65" cy="65" r="${R}" class="ring-fg" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C * (1 - beP / 100)).toFixed(1)}"/></svg>
+      <div class="ring-c"><b>${beP.toFixed(0)}%</b><span>${L('of break-even', 'من التعادل')}</span></div>
+     </div>
+     <p class="dc-note">${t.rev >= be.rev ? L('Above break-even by ', 'فوق التعادل بـ ') : L('Below break-even by ', 'تحت التعادل بـ ')}<b>${SAR(Math.round(Math.abs(t.rev - be.rev)))}</b></p>
+    </div>
+
+    <div class="dcard dark">
+     <div class="dc-h"><h4>${L('Menu optimization', 'تحسين القائمة')}</h4><span class="cnt">${ready.length}/${STATE.menu.length}</span></div>
+     <div class="tasklist">${taskRows.map(r => `<button class="task" onclick="go('${r.go}')"><span class="ti">${r.ic}</span><div><b>${r.t}</b><small>${r.s}</small></div><span class="tk ${r.done ? 'on' : ''}">${r.done ? '✓' : ''}</span></button>`).join('') || `<div class="note" style="color:#8a8a8a">${L('All items optimized.', 'كل الأصناف مُحسّنة.')}</div>`}</div>
+    </div>
+    </div>
+   </div>
+
+   <div class="dx-grid2">
+    <div class="dcard">
+     <h4>${L('Items needing repricing', 'أصناف تحتاج إعادة تسعير')} <span class="tag ${need.length ? 'bad' : 'ok'}">${need.length}</span></h4>
+     ${need.length ? `<table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Margin', 'الهامش')}</th><th></th></tr>${need.map(m => `<tr><td>${esc(m.n)}</td><td class="num down">${pct(marginPct(m))}</td><td><button class="btn btn-sm btn-line" onclick="go('pricing')">${L('Open strategist', 'فتح المُسعّر')}</button></td></tr>`).join('')}</table>`
+     : `<div class="alert good"><span>✓</span><div>${L('All items above the 20% net-margin floor.', 'كل الأصناف فوق حد الهامش الصافي 20%.')}</div></div>`}
+     <h4 style="margin-top:16px">${L('Supplier price alerts', 'تنبيهات أسعار الموردين')} <span class="tag ${alerts.length ? 'warn' : 'ok'}">${alerts.length}</span></h4>
+     ${alerts.map(i => `<div class="alert warn"><span>◆</span><div><b>${esc(i.n)}</b> ${L('price up from', 'ارتفع السعر من')} ${SAR2(i.hist[i.hist.length - 2].p)} → ${SAR2(i.hist[i.hist.length - 1].p)} ${L('/kg.', '/كجم.')} ${i.hist.length > 0 ? spark(i.hist) : ''}</div></div>`).join('') || `<div class="note">${L('No price alerts.', 'لا توجد تنبيهات أسعار.')}</div>`}
+    </div>
+    <div class="dcard">
+     <h4>${L('Break-even detail', 'تفاصيل التعادل')}</h4>
+     ${kpi(L('Break-even revenue', 'إيرادات التعادل'), SAR(Math.round(be.rev)), L('monthly threshold', 'الحد الشهري'))}
+     <div class="bartrack" style="margin:12px 0 8px"><i style="width:${beP.toFixed(0)}%"></i></div>
+     <p class="note">${L('At', 'عند')} ${SAR(t.rev)} ${L('revenue —', 'إيرادات —')} ${t.rev > be.rev ? L('above', 'فوق') : L('below', 'تحت')} ${L('break-even by', 'التعادل بمقدار')} ${SAR(Math.round(Math.abs(t.rev - be.rev)))}. ${L('CMR:', 'نسبة هامش المساهمة:')} ${pct(be.cmr * 100)}.</p>
+     <h4 style="margin-top:16px">${L('Pending recipe approvals', 'وصفات بانتظار الاعتماد')} <span class="tag ${pend.length ? 'warn' : 'ok'}">${pend.length}</span></h4>
+     ${pend.slice(0, 3).map(m => `<div class="alert warn"><span>⚗</span><div><b>${esc(m.n)}</b> — ${L('recipe needs approval before costing is accurate.', 'تحتاج الوصفة إلى اعتماد قبل أن تكون التكلفة دقيقة.')} <button class="btn btn-sm btn-line" onclick="go('recipe')" style="margin-top:4px">${L('Review', 'مراجعة')}</button></div></div>`).join('') || `<div class="note">${L('All recipes approved.', 'كل الوصفات معتمدة.')}</div>`}
+    </div>
+   </div>
+  </div>`;
 };
 
 // ── Pricing Strategist (Agent D) ──────────────────────────────
@@ -443,6 +546,7 @@ PAGES.sup = () => `<div style="display:flex;justify-content:flex-end;margin-bott
     <button class="btn btn-sm btn-danger" onclick="delSupplier(${si})">${L('Delete', 'حذف')}</button></span></h4>
    <p class="note">${esc(sp.cat)}</p>
    <table>
+    <tr><td>${L('Phone', 'الهاتف')}</td><td class="num" dir="ltr" style="text-align:end">${esc(sp.phone || '—')}</td></tr>
     <tr><td>${L('Payment terms', 'شروط الدفع')}</td><td class="num">${esc(sp.terms)}</td></tr>
     <tr><td>${L('Delivery days', 'أيام التوريد')}</td><td class="num">${esc(sp.days)}</td></tr>
     <tr><td>${L('Items supplied', 'الأصناف المورّدة')}</td><td class="num">${items.length}</td></tr>
@@ -463,6 +567,7 @@ function supplierModal(idx) {
   modal(`<h3>${editing ? L('Edit supplier', 'تعديل المورّد') : L('Add supplier', 'إضافة مورّد')}</h3>
    <div class="grid g2">
     <div class="field"><label>${L('Name', 'الاسم')}</label><input id="smN" value="${esc(sp.n)}" placeholder="${L('Gulf Fresh Fish Co.', 'شركة الخليج للأسماك الطازجة')}"></div>
+    <div class="field"><label>${L('Phone (WhatsApp)', 'الهاتف (واتساب)')}</label><input id="smP" value="${esc(sp.phone || '')}" placeholder="966500000000"></div>
     <div class="field"><label>${L('Category', 'التصنيف')}</label><input id="smC" value="${esc(sp.cat || '')}" placeholder="${L('Fresh fish', 'أسماك طازجة')}"></div>
     <div class="field"><label>${L('Payment terms', 'شروط الدفع')}</label><input id="smT" value="${esc(sp.terms || '')}" placeholder="Net 15"></div>
     <div class="field"><label>${L('Delivery days', 'أيام التوريد')}</label><input id="smD" value="${esc(sp.days || '')}" placeholder="${L('Sat · Mon · Wed', 'سبت · إثنين · أربعاء')}"></div>
@@ -501,7 +606,8 @@ function saveSupplier(idx) {
   const valid = _supDraftItems.filter(it => (it.n || '').trim() && it.price > 0);
   if (_supDraftItems.length && valid.length !== _supDraftItems.length) { toast(L('Each item row needs a name and a price > 0', 'كل صف صنف يحتاج اسماً وسعراً أكبر من 0'), 'bad'); return; }
   const oldName = editing ? STATE.sups[idx].n : null;
-  const supObj = { n, cat: $('smC').value.trim() || '—', terms: $('smT').value.trim() || '—', days: $('smD').value.trim() || '—', rating: editing ? STATE.sups[idx].rating : 4.5 };
+  const phone = $('smP') ? $('smP').value.trim().replace(/\D/g, '') : '';
+  const supObj = { n, phone, cat: $('smC').value.trim() || '—', terms: $('smT').value.trim() || '—', days: $('smD').value.trim() || '—', rating: editing ? STATE.sups[idx].rating : 4.5 };
   if (editing) { STATE.sups[idx] = supObj; if (oldName && oldName !== n) STATE.ings.forEach(i => { if (i.sup === oldName) i.sup = n; }); }
   else STATE.sups.push(supObj);
   let added = 0, updated = 0; const recosted = new Set();
@@ -534,9 +640,17 @@ function delSupplier(si) {
 // ── Procurement / Invoice Capture ─────────────────────────────
 PAGES.proc = () => {
   if (!STATE.ings.length) return emptyMenuState();
+  hydrateReceipts();
+  const rc = STATE.receipts || [];
   const changes = STATE.ings.filter(i => i.hist.length > 1).map(i => ({ i, ch: (i.hist.at(-1).p / i.hist[0].p - 1) * 100 })).sort((a, b) => b.ch - a.ch);
   const li = STATE.lastInv;
-  return `<div class="card" style="margin-bottom:13px"><h4>${L('Invoice capture', 'التقاط الفواتير')} <span class="tag gold">${L('MarginEdge-style · Agent E', 'الوكيل E')}</span></h4>
+  return `<div class="card" style="margin-bottom:13px"><h4>${L('Receipts', 'الفواتير')} <span class="tag gold">📷 ${L('Photo scan · EN / AR', 'مسح ضوئي · إنجليزي / عربي')}</span>
+   <button class="btn btn-gold btn-sm" style="margin-inline-start:auto" onclick="receiptModal()">📷 ${L('Scan / add receipt', 'مسح / إضافة فاتورة')}</button></h4>
+   <p class="note" style="margin-bottom:12px">${L('Take a photo of a supplier receipt — it is saved in the app, and the AI reads the items, prices and supplier (Arabic or English), then updates your ingredient costs and recosts affected recipes.', 'التقط صورة لفاتورة المورّد — تُحفظ في التطبيق، ويقرأ الذكاء الأصناف والأسعار والمورّد (عربي أو إنجليزي)، ثم يحدّث تكاليف مكوناتك ويعيد حساب الوصفات المتأثرة.')}</p>
+   ${rc.length ? `<div class="rcpt-grid">${rc.map(r => rcptThumb(r)).join('')}</div>`
+     : `<div class="empty" style="padding:26px 10px"><div class="big">🧾</div><h5>${L('No receipts yet', 'لا توجد فواتير بعد')}</h5><p style="max-width:42ch;margin:0 auto 12px">${L('Scan your first supplier receipt to start tracking real purchase prices — in English or Arabic.', 'امسح أول فاتورة مورّد لبدء تتبع أسعار الشراء الحقيقية — بالإنجليزية أو العربية.')}</p><button class="btn btn-gold btn-sm" onclick="receiptModal()">📷 ${L('Scan a receipt', 'امسح فاتورة')}</button></div>`}
+  </div>
+  <div class="card" style="margin-bottom:13px"><h4>${L('Invoice capture', 'التقاط الفواتير')} <span class="tag gold">${L('MarginEdge-style · Agent E', 'الوكيل E')}</span></h4>
    <p class="note" style="margin-bottom:10px">${L('Paste invoice lines — one per line as <b>ingredient name &nbsp;price</b>. The agent matches your ingredient database, updates purchase prices, <b>recosts every affected recipe instantly</b>, and raises alerts on increases over 5%.', 'الصق سطور الفاتورة — سطر لكل بند بصيغة <b>اسم المكوّن &nbsp;السعر</b>. يطابق الوكيل قاعدة مكوناتك، ويحدّث أسعار الشراء، و<b>يعيد حساب كل وصفة متأثرة فوراً</b>، ويرفع تنبيهات عند الزيادات فوق 5%.')}</p>
    <div class="field"><textarea id="invTxt" rows="5" placeholder="Hamour fish  64.5&#10;Shrimp peeled  61&#10;Olive oil  25"></textarea></div>
    <button class="btn btn-navy btn-sm" onclick="applyInvoice()">${L('▶ Process invoice', '▶ معالجة الفاتورة')}</button>
@@ -581,6 +695,223 @@ function applyInvoice() {
   });
   STATE.lastInv = r; render();
   toast(L(r.matched.length + ' price(s) applied — every affected recipe recosted' + (r.unmatched.length ? ' · ' + r.unmatched.length + ' unmatched' : ''), 'طُبّق ' + r.matched.length + ' سعر — أُعيد حساب كل وصفة متأثرة' + (r.unmatched.length ? ' · ' + r.unmatched.length + ' غير مطابق' : '')));
+}
+
+// ── Receipts: photo capture + AI scan (EN/AR) ─────────────────
+// Receipts (with their photo) are saved in-app via localStorage, keyed per org,
+// so they survive reloads without putting large images in the database.
+function receiptsKey() { return 'mp_receipts_' + (STATE._orgId || (STATE.org && STATE.org.name) || 'demo'); }
+function hydrateReceipts() {
+  if (STATE._rcptHydrated) return;
+  STATE._rcptHydrated = true;
+  try { const raw = localStorage.getItem(receiptsKey()); if (raw) { const a = JSON.parse(raw); if (Array.isArray(a)) STATE.receipts = a; } } catch (e) { /* unavailable */ }
+}
+function persistReceipts() {
+  let arr = STATE.receipts || [];
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try { localStorage.setItem(receiptsKey(), JSON.stringify(arr)); return; }
+    catch (e) { if (arr.length <= 1) return; arr = arr.slice(0, Math.ceil(arr.length / 2)); STATE.receipts = arr; } // drop oldest on quota
+  }
+}
+
+// Downscale a chosen photo with a canvas → returns a JPEG data URL + raw base64.
+function scaleImage(file, maxDim, quality) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      const scale = Math.min(1, maxDim / Math.max(width, height || 1));
+      width = Math.max(1, Math.round(width * scale)); height = Math.max(1, Math.round(height * scale));
+      const c = document.createElement('canvas'); c.width = width; c.height = height;
+      c.getContext('2d').drawImage(img, 0, 0, width, height);
+      const dataURL = c.toDataURL('image/jpeg', quality);
+      resolve({ dataURL, base64: dataURL.split(',')[1], media_type: 'image/jpeg' });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not load image')); };
+    img.src = url;
+  });
+}
+
+function rcptThumb(r) {
+  const total = r.total || r.items.reduce((a, it) => a + (+it.price || 0), 0);
+  return `<div class="rcpt">
+    <button class="rcpt-img" onclick="viewReceipt('${r.id}')" ${r.img ? `style="background-image:url('${r.img}')"` : ''}>${r.img ? '' : '🧾'}</button>
+    <div class="rcpt-meta"><b>${esc(r.supplier || L('Unknown supplier', 'مورّد غير معروف'))}</b><small>${esc(r.date || '')}${r.date ? ' · ' : ''}${r.items.length} ${L('items', 'أصناف')} · ${SAR(Math.round(total))}</small></div>
+    <button class="rcpt-del" title="${L('Delete', 'حذف')}" onclick="delReceipt('${r.id}')">✕</button>
+  </div>`;
+}
+
+let _rcptDraft = null;
+function receiptModal(id) {
+  const ex = id ? STATE.receipts.find(r => r.id === id) : null;
+  _rcptDraft = ex
+    ? { id: ex.id, img: ex.img, scan: null, supplier: ex.supplier, date: ex.date, total: ex.total || 0,
+        items: ex.items.map(it => ({ name: it.name, nameAr: it.nameAr || '', matched: '', qty: it.qty || '', unit: it.unit || 'kg', price: it.price || 0 })) }
+    : { id: null, img: '', scan: null, supplier: '', date: '', total: 0, items: [] };
+  modal(`<h3>${ex ? L('Edit receipt', 'تعديل الفاتورة') : L('Scan / add receipt', 'مسح / إضافة فاتورة')}</h3>
+   <div class="rcpt-cap">
+    <div id="rcptPrev" class="rcpt-prev"></div>
+    <div class="rcpt-cap-side">
+     <label class="btn btn-navy btn-sm" style="display:inline-flex">📷 ${L('Take / choose photo', 'التقاط / اختيار صورة')}<input id="rcptFile" type="file" accept="image/*" capture="environment" onchange="onReceiptFile(this)" style="display:none"></label>
+     <button class="btn btn-gold btn-sm" id="rcptExtract" ${_rcptDraft.img ? '' : 'disabled'} onclick="runReceiptScan()">✨ ${L('Auto-extract from photo', 'استخراج تلقائي من الصورة')}</button>
+     <p class="note">${L('Reads English & Arabic receipts.', 'يقرأ الفواتير الإنجليزية والعربية.')}</p>
+    </div>
+   </div>
+   <div class="grid g2" style="margin-top:6px">
+    <div class="field"><label>${L('Supplier', 'المورّد')}</label><input id="rcptSup" list="rcptSupList" value="${esc(_rcptDraft.supplier)}" placeholder="${L('Gulf Fresh Fish Co.', 'شركة الخليج للأسماك')}"><datalist id="rcptSupList">${STATE.sups.map(s => `<option value="${esc(s.n)}">`).join('')}</datalist></div>
+    <div class="field"><label>${L('Date', 'التاريخ')}</label><input id="rcptDate" type="date" value="${esc(_rcptDraft.date || '')}"></div>
+   </div>
+   <h4 style="margin:4px 0 8px">${L('Items on the receipt', 'أصناف الفاتورة')}</h4>
+   <div id="rcptItems"></div>
+   <button class="btn btn-sm btn-line" onclick="rcptAddRow()">${L('+ Add item', '+ إضافة صنف')}</button>
+   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:18px">
+    <button class="btn btn-line" onclick="closeModal()">${L('Cancel', 'إلغاء')}</button>
+    <button class="btn btn-gold" onclick="saveReceipt()">${L('Save receipt', 'حفظ الفاتورة')}</button>
+   </div>`);
+  renderRcptPrev();
+  renderRcptItems();
+}
+
+function renderRcptPrev() {
+  const host = $('rcptPrev'); if (!host) return;
+  host.innerHTML = _rcptDraft.img ? `<img src="${_rcptDraft.img}" alt="receipt">` : `<span class="note">${L('No photo yet', 'لا توجد صورة بعد')}</span>`;
+}
+
+async function onReceiptFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  try {
+    const thumb = await scaleImage(file, 900, 0.6);    // stored in-app
+    const big   = await scaleImage(file, 1280, 0.78);  // sent to the AI
+    _rcptDraft.img = thumb.dataURL;
+    _rcptDraft.scan = { base64: big.base64, media_type: big.media_type };
+    renderRcptPrev();
+    const ex = $('rcptExtract'); if (ex) ex.disabled = false;
+  } catch (e) { toast(L('Could not read that image', 'تعذّر قراءة الصورة'), 'bad'); }
+}
+
+async function runReceiptScan() {
+  if (!_rcptDraft.scan) { toast(L('Add a photo first', 'أضف صورة أولاً'), 'bad'); return; }
+  const btn = $('rcptExtract');
+  if (btn) { btn.disabled = true; btn.textContent = L('Reading…', 'جارٍ القراءة…'); }
+  const host = $('rcptItems'); if (host) host.innerHTML = `<div class="skeleton" style="width:90%"></div><div class="skeleton" style="width:70%"></div><div class="skeleton" style="width:80%"></div>`;
+  try {
+    const data = await agentScanReceipt(_rcptDraft.scan);
+    if (data.supplier && $('rcptSup')) $('rcptSup').value = data.supplier;
+    if (data.date && $('rcptDate')) $('rcptDate').value = data.date;
+    _rcptDraft.total = +data.total || 0;
+    _rcptDraft.items = (data.items || []).map(it => ({
+      name: (it.name || it.nameAr || '').toString().trim(),
+      nameAr: it.nameAr || '',
+      matched: it.matchedName || '',
+      qty: it.qty || '',
+      unit: it.unit || 'kg',
+      price: (typeof it.price === 'number' && it.price > 0) ? it.price : (it.lineTotal && it.qty ? +(it.lineTotal / it.qty).toFixed(2) : 0),
+    })).filter(x => x.name);
+    renderRcptItems();
+    toast(L(_rcptDraft.items.length + ' line(s) read — review & save', 'قُرئ ' + _rcptDraft.items.length + ' بند — راجع واحفظ'));
+  } catch (e) {
+    renderRcptItems();
+    toast(e.message || L('Scan failed', 'فشل المسح'), 'bad');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ ' + L('Auto-extract from photo', 'استخراج تلقائي من الصورة'); }
+  }
+}
+
+function renderRcptItems() {
+  const host = $('rcptItems'); if (!host) return;
+  const its = _rcptDraft.items;
+  if (!its.length) { host.innerHTML = `<p class="note" style="padding:8px 0">${L('No items yet. Auto-extract from the photo, or add rows manually.', 'لا توجد أصناف بعد. استخرج تلقائياً من الصورة أو أضف صفوفاً يدوياً.')}</p>`; return; }
+  host.innerHTML = `<table style="margin-bottom:6px"><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Qty', 'الكمية')}</th><th>${L('Unit', 'الوحدة')}</th><th class="num">${L('Unit price', 'سعر الوحدة')}</th><th></th></tr>
+   ${its.map((it, k) => `<tr>
+     <td><input class="tbl-edit" style="width:160px;text-align:start" value="${esc(it.name)}" oninput="_rcptDraft.items[${k}].name=this.value">${it.matched ? `<div class="note" style="font-size:10.5px">↪ ${esc(it.matched)}</div>` : ''}${it.nameAr ? `<div class="note" style="font-size:10.5px" dir="rtl">${esc(it.nameAr)}</div>` : ''}</td>
+     <td class="num"><input class="tbl-edit" style="width:58px" type="number" step="0.1" value="${it.qty}" oninput="_rcptDraft.items[${k}].qty=this.value"></td>
+     <td><select class="tbl-edit" style="width:68px;text-align:start" onchange="_rcptDraft.items[${k}].unit=this.value">${['kg', 'g', 'L', 'ml', 'pc', 'box', 'crate'].map(u => `<option ${it.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select></td>
+     <td class="num"><input class="tbl-edit" type="number" step="0.5" value="${it.price || ''}" oninput="_rcptDraft.items[${k}].price=+this.value||0"></td>
+     <td><button class="btn btn-sm btn-danger" onclick="_rcptDraft.items.splice(${k},1);renderRcptItems()">✕</button></td>
+   </tr>`).join('')}</table>`;
+}
+function rcptAddRow() { _rcptDraft.items.push({ name: '', nameAr: '', matched: '', qty: '', unit: 'kg', price: 0 }); renderRcptItems(); }
+
+// Matches receipt lines to ingredients, updates prices, adds new ones, ensures
+// the supplier exists, and recosts affected recipes — same engine as invoices.
+function applyReceiptToInventory(r) {
+  if (r.supplier && !STATE.sups.some(s => s.n.toLowerCase() === r.supplier.toLowerCase())) {
+    STATE.sups.push({ n: r.supplier, cat: '—', terms: '—', days: '—', rating: 4.5 });
+  }
+  let added = 0, updated = 0; const recosted = new Set();
+  r.items.forEach(it => {
+    const lo = it.name.toLowerCase();
+    const ig = STATE.ings.find(i => { const a = i.n.toLowerCase(); return a === lo || a.includes(lo) || lo.includes(a.split(' (')[0]); });
+    if (ig) {
+      const old = ig.price;
+      if (it.price && it.price !== old) {
+        ig.price = it.price; ig.est = false; ig.sup = r.supplier || ig.sup; ig.hist = ig.hist || []; ig.hist.push({ d: 'rcpt', p: it.price }); if (ig.hist.length > 8) ig.hist.shift(); updated++;
+        if (old && it.price > old * 1.05) STATE.notifications.unshift({ t: L('Procurement Analyst', 'محلل المشتريات'), m: L(ig.n + ' up ' + pct((it.price / old - 1) * 100) + ' on a scanned receipt — recipes recosted.', ig.n + ' ارتفع ' + pct((it.price / old - 1) * 100) + ' في فاتورة ممسوحة — أُعيد حساب الوصفات.'), k: 'bad', time: 'now' });
+        STATE.menu.forEach(m => { if (m.recipe.some(x => x[0] === ig.id)) recosted.add(m.n); });
+      } else if (r.supplier) { ig.sup = r.supplier; }
+    } else {
+      STATE.ings.push({ id: uid(), n: it.name, sup: r.supplier || 'Unassigned', unit: it.unit || 'kg', price: it.price, yield: 1, orderQty: +it.qty || 0, est: false, hist: [{ d: 'rcpt', p: it.price }] });
+      added++;
+    }
+  });
+  return { added, updated, recosted: recosted.size };
+}
+
+function saveReceipt() {
+  const supplier = (($('rcptSup') && $('rcptSup').value) || '').trim();
+  const date = ($('rcptDate') && $('rcptDate').value) || '';
+  if (!_rcptDraft.img) { toast(L('A receipt photo is required', 'صورة الفاتورة مطلوبة'), 'bad'); return; }
+  if (!supplier) { toast(L('Enter the supplier name', 'أدخل اسم المورّد'), 'bad'); return; }
+  const valid = _rcptDraft.items.filter(it => (it.name || '').trim() && +it.price > 0);
+  if (!valid.length) { toast(L('Add at least one item with a price', 'أضف صنفاً واحداً على الأقل بسعر'), 'bad'); return; }
+  const rcpt = {
+    id: _rcptDraft.id || uid(), ts: Date.now(), supplier, date, img: _rcptDraft.img,
+    items: valid.map(it => ({ name: it.name.trim(), nameAr: it.nameAr || '', unit: it.unit || 'kg', qty: +it.qty || 0, price: +it.price || 0 })),
+    total: +_rcptDraft.total || valid.reduce((a, it) => a + (+it.price || 0), 0),
+  };
+  const summary = applyReceiptToInventory(rcpt);
+  const i = STATE.receipts.findIndex(r => r.id === rcpt.id);
+  if (i >= 0) STATE.receipts[i] = rcpt; else STATE.receipts.unshift(rcpt);
+  if (STATE.receipts.length > 30) STATE.receipts = STATE.receipts.slice(0, 30);
+  persistReceipts();
+  closeModal(); render();
+  const parts = [L('Receipt saved', 'حُفظت الفاتورة')];
+  if (summary.added) parts.push(L(summary.added + ' new ingredient(s)', summary.added + ' مكوّن جديد'));
+  if (summary.updated) parts.push(L(summary.updated + ' price(s) updated', 'حُدّث ' + summary.updated + ' سعر'));
+  if (summary.recosted) parts.push(L(summary.recosted + ' recipe(s) recosted', 'أُعيد حساب ' + summary.recosted + ' وصفة'));
+  toast(parts.join(' — '));
+}
+
+function viewReceipt(id) {
+  const r = STATE.receipts.find(x => x.id === id); if (!r) return;
+  modal(`<h3>${esc(r.supplier || L('Receipt', 'فاتورة'))}</h3>
+   <div class="rcpt-view">
+    <div class="rcpt-view-img">${r.img ? `<img src="${r.img}" alt="receipt">` : '🧾'}</div>
+    <div class="rcpt-view-list">
+     <p class="note">${esc(r.date || '')}${r.date ? ' · ' : ''}${r.items.length} ${L('items', 'أصناف')} · ${L('total', 'الإجمالي')} ${SAR(Math.round(r.total || 0))}</p>
+     <table><tr><th>${L('Item', 'الصنف')}</th><th class="num">${L('Qty', 'الكمية')}</th><th class="num">${L('Price', 'السعر')}</th></tr>
+     ${r.items.map(it => `<tr><td>${esc(it.name)}${it.nameAr ? ` <span class="note" dir="rtl">${esc(it.nameAr)}</span>` : ''}</td><td class="num">${it.qty || ''} ${it.unit || ''}</td><td class="num">${SAR2(it.price)}</td></tr>`).join('')}</table>
+    </div>
+   </div>
+   <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+    <button class="btn btn-line" onclick="closeModal()">${L('Close', 'إغلاق')}</button>
+    <button class="btn btn-line" onclick="receiptModal('${r.id}')">${L('Edit', 'تعديل')}</button>
+    <button class="btn btn-gold" onclick="reapplyReceipt('${r.id}')">${L('Re-apply prices', 'إعادة تطبيق الأسعار')}</button>
+   </div>`);
+}
+function reapplyReceipt(id) {
+  const r = STATE.receipts.find(x => x.id === id); if (!r) return;
+  const s = applyReceiptToInventory(r);
+  closeModal(); render();
+  toast(L('Prices re-applied', 'أُعيد تطبيق الأسعار') + ' — ' + (s.updated + s.added) + ' ' + L('ingredient(s)', 'مكوّن'));
+}
+function delReceipt(id) {
+  STATE.receipts = STATE.receipts.filter(r => r.id !== id);
+  persistReceipts(); render();
+  toast(L('Receipt deleted', 'حُذفت الفاتورة'), 'bad');
 }
 
 // ── Inventory Variance ────────────────────────────────────────
@@ -1101,3 +1432,255 @@ async function importIngredientsUrl() {
     toast(L('URL extraction failed: ', 'فشل الاستخراج من الرابط: ') + err.message, 'bad');
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// PROCUREMENT AI DASHBOARD — intelligent supplier management
+// ═══════════════════════════════════════════════════════════════
+
+PAGES.procDash = () => {
+  if (!STATE.ings.length) return emptyMenuState();
+
+  // ── Compute inventory / days-remaining data ──
+  const invData = STATE.ings.map(i => {
+    const daily = STATE.menu.reduce((a, m) => a + m.recipe.reduce((b, [id, qy]) => id === i.id ? b + (i.unit === 'pc' ? qy : qy / 1000) * m.sold / 30 : b, 0), 0);
+    const estStock = daily * (3 + Math.random() * 7);
+    const days = daily > 0 ? estStock / daily : 99;
+    return { ...i, daily, estStock, days };
+  }).filter(i => i.daily > 0).sort((a, b) => a.days - b.days);
+
+  const critical = invData.filter(i => i.days <= 2).length;
+  const warning = invData.filter(i => i.days > 2 && i.days <= 5).length;
+  const orders = STATE.procOrders || [];
+  const scores = STATE.supScores || [];
+  const messages = STATE.procMessages || [];
+  const pendingOrders = orders.filter(o => o.status === 'draft').length;
+  const totalSavings = Math.round(scores.reduce((a, s) => a + s.spend * 0.04, 0));
+
+  // ── KPI row ──
+  let html = `<div class="grid g4" style="margin-bottom:14px">
+    ${kpi(L('Open Quotations','عروض أسعار مفتوحة'), (STATE.procQuotes || []).length, L('awaiting response','بانتظار الرد'))}
+    ${kpi(L('Pending Orders','أوامر شراء معلّقة'), pendingOrders, pendingOrders ? L('need approval','تحتاج موافقة') : L('all clear','لا شيء'))}
+    ${kpi(L('Est. Savings','وفورات تقديرية'), SAR(totalSavings), L('from supplier optimization','من تحسين الموردين'))}
+    ${kpi(L('Inventory Risks','مخاطر المخزون'), critical + warning, critical ? L(critical+' critical',''+critical+' حرج') : L('stable','مستقر'), critical ? 'down' : 'up')}
+  </div>`;
+
+  // ── AI Action Buttons ──
+  html += `<div class="proc-actions">
+    <button class="btn btn-navy btn-sm" onclick="runInventoryCheck()">${lc('package')} ${L('Run Inventory Check','فحص المخزون')}</button>
+    <button class="btn btn-navy btn-sm" onclick="runDemandForecast()">${lc('trending-up')} ${L('Generate Forecast','توليد التنبؤ')}</button>
+    <button class="btn btn-navy btn-sm" onclick="runScoreSuppliers()">${lc('bar-chart-2')} ${L('Score Suppliers','تقييم الموردين')}</button>
+    <button class="btn btn-gold btn-sm" onclick="openPOModal()">${lc('file-plus')} ${L('Create Purchase Order','إنشاء أمر شراء')}</button>
+    <button class="btn btn-line btn-sm" onclick="openWAModal()">${lc('message-circle')} ${L('Draft WhatsApp','مسودة واتساب')}</button>
+  </div>
+  <div id="procResult"></div>`;
+
+  // ── Inventory Alerts ──
+  html += `<div class="card" style="margin-bottom:14px"><h4>${lc('alert-triangle')} ${L('Inventory Alerts','تنبيهات المخزون')} <span class="tag ${critical ? 'bad' : 'gold'}">${critical + warning} ${L('items','عنصر')}</span></h4>
+  <table><tr><th>${L('Ingredient','المكوّن')}</th><th class="num">${L('Daily Use','الاستهلاك اليومي')}</th><th class="num">${L('Est. Stock','المخزون التقديري')}</th><th class="num">${L('Days Left','أيام متبقية')}</th><th>${L('Status','الحالة')}</th><th>${L('Action','إجراء')}</th></tr>
+  ${invData.slice(0, 12).map(i => {
+    const cls = i.days <= 2 ? 'critical' : i.days <= 5 ? 'warning' : 'ok';
+    const lbl = i.days <= 2 ? L('Critical','حرج') : i.days <= 5 ? L('Warning','تحذير') : L('OK','جيد');
+    return `<tr><td>${esc(i.n)}</td><td class="num">${i.daily.toFixed(1)} ${i.unit}</td><td class="num">${i.estStock.toFixed(1)} ${i.unit}</td><td class="num">${i.days.toFixed(1)}</td><td><span class="stock-badge ${cls}">${lbl}</span></td><td><button class="btn btn-sm btn-line" onclick="openPOModalFor('${esc(i.n)}','${esc(i.sup)}')">PO</button></td></tr>`;
+  }).join('')}
+  </table></div>`;
+
+  // ── Supplier Rankings ──
+  if (scores.length) {
+    html += `<div class="card" style="margin-bottom:14px"><h4>${lc('award')} ${L('Supplier Rankings','تصنيف الموردين')} <span class="tag info">${L('AI-scored','تقييم ذكي')}</span></h4>
+    <table><tr><th>${L('Supplier','المورّد')}</th><th>${L('Overall','الإجمالي')}</th><th>${L('Price','السعر')}</th><th>${L('Quality','الجودة')}</th><th>${L('Delivery','التوصيل')}</th><th class="num">${L('Monthly Spend','الإنفاق الشهري')}</th></tr>
+    ${scores.sort((a, b) => b.overall - a.overall).map(s => {
+      const barHtml = (val) => { const cls = val >= 85 ? 'high' : val >= 70 ? 'med' : 'low'; return `<div class="score-bar">${val}<div class="bar"><i class="${cls}" style="width:${val}%"></i></div></div>`; };
+      return `<tr><td><b>${esc(s.sup)}</b></td><td>${barHtml(s.overall)}</td><td>${barHtml(s.price)}</td><td>${barHtml(s.quality)}</td><td>${barHtml(s.delivery)}</td><td class="num">${SAR(s.spend)}</td></tr>`;
+    }).join('')}
+    </table></div>`;
+  }
+
+  // ── Purchase Orders ──
+  html += `<div class="card" style="margin-bottom:14px"><h4>${lc('clipboard-list')} ${L('Purchase Orders','أوامر الشراء')} <span class="tag gold">${orders.length} ${L('orders','طلب')}</span></h4>`;
+  if (orders.length) {
+    html += `<table><tr><th>${L('Supplier','المورّد')}</th><th>${L('Items','الأصناف')}</th><th class="num">${L('Total (SAR)','الإجمالي (ر.س)')}</th><th>${L('Status','الحالة')}</th><th>${L('Date','التاريخ')}</th><th></th></tr>
+    ${orders.map(o => `<tr><td>${esc(o.sup)}</td><td>${o.items.map(it => esc(it.n)+' ('+it.qty+' '+it.unit+')').join(', ')}</td><td class="num">${SAR(o.total)}</td><td><span class="po-status ${o.status}">${o.status.toUpperCase()}</span></td><td class="note">${o.date}</td><td>${o.status === 'draft' ? `<button class="btn btn-sm btn-gold" onclick="sendPO('${o.id}')">${L('Send','إرسال')}</button>` : ''}</td></tr>`).join('')}
+    </table>`;
+  } else {
+    html += `<div class="empty" style="padding:20px"><div class="big">${lc('clipboard-list')}</div><h5>${L('No purchase orders yet','لا توجد أوامر شراء بعد')}</h5><p>${L('Create one using the button above.','أنشئ واحداً باستخدام الزر أعلاه.')}</p></div>`;
+  }
+  html += `</div>`;
+
+  // ── WhatsApp Messages ──
+  html += `<div class="card"><h4>${lc('message-circle')} ${L('WhatsApp Messages','رسائل واتساب')} <span class="tag info">${messages.length} ${L('drafted','مسودة')}</span></h4>`;
+  if (messages.length) {
+    html += messages.map(m => {
+      const sp = STATE.sups.find(s => s.n === m.sup);
+      const phoneParam = sp && sp.phone ? sp.phone.replace(/\D/g, '') : '';
+      return `<div class="wa-card">
+      <div class="wa-head"><b>${esc(m.sup)}</b><span class="note">${m.date} · <span class="po-status ${m.status}">${m.status.toUpperCase()}</span></span></div>
+      <div class="wa-body">${esc(m.msg)}</div>
+      <div class="wa-foot">
+        <button class="btn btn-sm btn-line" onclick="copyWAMessage('${m.id}')">${lc('copy')} ${L('Copy','نسخ')}</button>
+        <a class="btn btn-sm btn-navy" href="https://wa.me/${phoneParam}?text=${encodeURIComponent(m.msg)}" target="_blank" onclick="markWASent('${m.id}')">${lc('send')} ${L('Open WhatsApp','فتح واتساب')}</a>
+      </div>
+    </div>`;
+    }).join('');
+  } else {
+    html += `<div class="empty" style="padding:20px"><div class="big">${lc('message-circle')}</div><h5>${L('No messages drafted','لا توجد مسودات')}</h5><p>${L('Draft a supplier message using the button above.','أنشئ رسالة للمورّد باستخدام الزر أعلاه.')}</p></div>`;
+  }
+  html += `</div>`;
+
+  return html;
+};
+
+// ── Procurement helper functions ────────────────────────────────
+
+async function runInventoryCheck() {
+  const el = $('procResult');
+  if (el) el.innerHTML = `<div class="proc-result"><span class="g">► ${L('Inventory Monitor Agent','وكيل مراقبة المخزون')}</span>\n${'─'.repeat(48)}\n<span class="spinner"></span> ${L('Analyzing inventory levels and consumption…','جاري تحليل مستويات المخزون والاستهلاك…')}</div>`;
+  
+  const res = await agentInventoryMonitor();
+  if (el) {
+    el.innerHTML = `<div class="proc-result"><span class="g">► ${L('Inventory Monitor Agent','وكيل مراقبة المخزون')}</span>\n${'─'.repeat(48)}\n${res.alerts.map(i => `${i.status === 'critical' ? '🔴 CRITICAL' : i.status === 'warning' ? '🟡 WARNING' : '🟢 OK'} ${i.ingredient}: ${i.daysRemaining} ${L('days left','أيام متبقية')} (${i.currentStock} ${L('in stock','بالمخزون')}, ${i.dailyUsage} ${L('/day','/ يوم')})`).join('\n')}\n${'─'.repeat(48)}\n${L('Summary: ','الخلاصة: ')}${res.summary}</div>`;
+  }
+  toast(L('Inventory check complete','اكتمل فحص المخزون'));
+}
+
+async function runDemandForecast() {
+  const el = $('procResult');
+  if (el) el.innerHTML = `<div class="proc-result"><span class="g">► ${L('Demand Forecast Agent','وكيل التنبؤ بالطلب')}</span>\n${'─'.repeat(48)}\n${L('Generating demand forecasts based on menu sales…','جاري توليد توقعات الطلب بناءً على مبيعات القائمة…')}</div>`;
+  
+  const res = await agentDemandForecast();
+  if (el) {
+    el.innerHTML = `<div class="proc-result"><span class="g">► ${L('Demand Forecast Agent','وكيل التنبؤ بالطلب')}</span>\n${'─'.repeat(48)}\n${res.forecasts.map(f => `${f.ingredient}: ${L('current','حالي')} ${f.currentUsagePerDay} → ${L('forecast','متوقع')} ${f.forecastedDailyUsage} (${L('Recommended purchase:','شراء مقترح:')} ${f.recommendedPurchase})`).join('\n')}\n${'─'.repeat(48)}\n${L('Insights: ','رؤى: ')}${res.insights}</div>`;
+  }
+  toast(L('Demand forecast generated','تم توليد التنبؤ بالطلب'));
+}
+
+async function runScoreSuppliers() {
+  const el = $('procResult');
+  if (el) el.innerHTML = `<div class="proc-result"><span class="g">► ${L('Supplier Scoring Agent','وكيل تقييم الموردين')}</span>\n${'─'.repeat(48)}\n${L('Evaluating supplier performance and pricing…','جاري تقييم أداء وتسعير الموردين…')}</div>`;
+
+  const res = await agentScoreSuppliers();
+  const scores = res.rankings.map(r => ({
+    sup: r.supplier,
+    overall: r.overall,
+    price: r.scores.price,
+    quality: r.scores.quality,
+    delivery: r.scores.delivery,
+    spend: STATE.sups.find(s => s.n === r.supplier) ? Math.round(STATE.menu.reduce((a, m) => a + m.recipe.reduce((b, [id, qy]) => { const i = STATE.ings.find(x => x.id === id); return i && i.sup === r.supplier ? b + (i.unit === 'pc' ? qy * i.price : qy / 1000 * i.price) * m.sold : b; }, 0), 0)) : 0
+  }));
+  STATE.supScores = scores;
+
+  if (el) {
+    el.innerHTML = `<div class="proc-result"><span class="g">► ${L('Supplier Scoring Agent','وكيل تقييم الموردين')}</span>\n${'─'.repeat(48)}\n${scores.sort((a, b) => b.overall - a.overall).map((s, i) => `#${i + 1} ${s.sup}: ${L('Overall','إجمالي')} ${s.overall}/100 | ${L('Price','سعر')} ${s.price} | ${L('Quality','جودة')} ${s.quality} | ${L('Delivery','توصيل')} ${s.delivery} | ${L('Spend','إنفاق')} ${SAR(s.spend)}`).join('\n')}\n${'─'.repeat(48)}\n${L('Insights: ','رؤى: ')}${res.insights}</div>`;
+  }
+  toast(L('Supplier scores updated','تم تحديث تقييمات الموردين'));
+  setTimeout(() => render(), 1200);
+}
+
+function openPOModal() {
+  const sups = STATE.sups.filter(sp => sp.n !== 'In-house prep');
+  modal(`<h3>${L('Create Purchase Order','إنشاء أمر شراء')}</h3>
+    <div class="grid g2">
+      <div class="field"><label>${L('Supplier','المورّد')}</label><select id="poSup">${sups.map(s => `<option>${esc(s.n)}</option>`).join('')}</select></div>
+      <div class="field"><label>${L('Date','التاريخ')}</label><input id="poDate" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+    </div>
+    <h4 style="margin:10px 0 8px">${L('Items','الأصناف')}</h4>
+    <div id="poItems"></div>
+    <button class="btn btn-sm btn-line" onclick="poAddRow()" style="margin:8px 0">${L('+ Add item','+ إضافة صنف')}</button>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-line" onclick="closeModal()">${L('Cancel','إلغاء')}</button>
+      <button class="btn btn-navy" onclick="savePO('draft')">${L('Save as Draft','حفظ كمسودة')}</button>
+      <button class="btn btn-gold" onclick="savePO('sent')">${L('Save & Send','حفظ وإرسال')}</button>
+    </div>`);
+  window._poRows = [{ n: '', qty: 0, unit: 'kg', price: 0 }];
+  renderPOItems();
+}
+
+function openPOModalFor(ingName, supName) {
+  openPOModal();
+  const sel = $('poSup');
+  if (sel) { for (let i = 0; i < sel.options.length; i++) { if (sel.options[i].text === supName) { sel.selectedIndex = i; break; } } }
+  window._poRows = [{ n: ingName, qty: 10, unit: 'kg', price: 0 }];
+  const ing = STATE.ings.find(x => x.n === ingName);
+  if (ing) window._poRows[0].price = ing.price;
+  renderPOItems();
+}
+
+function poAddRow() { window._poRows.push({ n: '', qty: 0, unit: 'kg', price: 0 }); renderPOItems(); }
+
+function renderPOItems() {
+  const host = $('poItems'); if (!host) return;
+  host.innerHTML = `<table><tr><th>${L('Item','الصنف')}</th><th class="num">${L('Qty','الكمية')}</th><th>${L('Unit','الوحدة')}</th><th class="num">${L('Price','السعر')}</th><th></th></tr>
+  ${window._poRows.map((r, k) => `<tr>
+    <td><input class="tbl-edit" style="width:160px;text-align:start" value="${esc(r.n)}" oninput="window._poRows[${k}].n=this.value" placeholder="${L('Item name','اسم الصنف')}"></td>
+    <td class="num"><input class="tbl-edit" type="number" value="${r.qty}" oninput="window._poRows[${k}].qty=+this.value"></td>
+    <td><select class="tbl-edit" onchange="window._poRows[${k}].unit=this.value">${['kg','L','pc','g','box','crate'].map(u => `<option ${r.unit === u ? 'selected' : ''}>${u}</option>`).join('')}</select></td>
+    <td class="num"><input class="tbl-edit" type="number" step="0.5" value="${r.price}" oninput="window._poRows[${k}].price=+this.value"></td>
+    <td><button class="btn btn-sm btn-danger" onclick="window._poRows.splice(${k},1);renderPOItems()">\u2715</button></td>
+  </tr>`).join('')}</table>`;
+}
+
+function savePO(status) {
+  const sup = $('poSup') ? $('poSup').value : '';
+  const date = $('poDate') ? $('poDate').value : new Date().toISOString().slice(0, 10);
+  const items = (window._poRows || []).filter(r => r.n && r.qty > 0 && r.price > 0);
+  if (!items.length) { toast(L('Add at least one valid item','أضف صنفاً واحداً صحيحاً على الأقل'), 'bad'); return; }
+  const total = items.reduce((a, r) => a + r.qty * r.price, 0);
+  if (!STATE.procOrders) STATE.procOrders = [];
+  STATE.procOrders.unshift({ id: uid(), sup, items, total: Math.round(total), status, date });
+  closeModal(); render();
+  toast(L('Purchase order created \u2014 ' + SAR(Math.round(total)),'تم إنشاء أمر الشراء \u2014 ' + SAR(Math.round(total))));
+}
+
+function sendPO(id) {
+  const o = (STATE.procOrders || []).find(x => x.id === id);
+  if (o) { o.status = 'sent'; render(); toast(L('Order sent to supplier','تم إرسال الطلب للمورّد')); }
+}
+
+function openWAModal() {
+  const sups = STATE.sups.filter(sp => sp.n !== 'In-house prep');
+  modal(`<h3>${lc('message-circle')} ${L('Draft WhatsApp Message','مسودة رسالة واتساب')}</h3>
+    <div class="field"><label>${L('Supplier','المورّد')}</label><select id="waSup">${sups.map(s => `<option>${esc(s.n)}</option>`).join('')}</select></div>
+    <div class="field"><label>${L('Message type','نوع الرسالة')}</label><select id="waType">
+      <option value="order">${L('Order confirmation','تأكيد طلب')}</option>
+      <option value="inquiry">${L('Price inquiry','استفسار سعر')}</option>
+      <option value="followup">${L('Follow up','متابعة')}</option>
+    </select></div>
+    <div class="field"><label>${L('Additional notes','ملاحظات إضافية')}</label><textarea id="waNotes" rows="2" placeholder="${L('Any specific items or instructions\u2026','أي أصناف أو تعليمات محددة\u2026')}"></textarea></div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-line" onclick="closeModal()">${L('Cancel','إلغاء')}</button>
+      <button class="btn btn-gold" onclick="generateWAMessage()">${lc('sparkles')} ${L('Generate Message','توليد الرسالة')}</button>
+    </div>`);
+}
+
+async function generateWAMessage() {
+  const sup = $('waSup') ? $('waSup').value : '';
+  const type = $('waType') ? $('waType').value : 'order';
+  const notes = $('waNotes') ? $('waNotes').value.trim() : '';
+  
+  const el = $('waNotes');
+  if (el) el.value = L('Generating AI message...','جاري توليد رسالة الذكاء الاصطناعي...');
+
+  const items = STATE.ings.filter(i => i.sup === sup).map(i => ({ name: i.n, qty: 10, unit: i.unit }));
+  const msgText = await agentSupplierMessage(sup, items, type + (notes ? ' - Note: ' + notes : ''));
+
+  if (!STATE.procMessages) STATE.procMessages = [];
+  const m = { id: uid(), sup, msg: msgText, date: new Date().toISOString().slice(0, 10), status: 'drafted' };
+  STATE.procMessages.unshift(m);
+  closeModal(); render();
+  toast(L('WhatsApp message drafted by AI','تم إعداد مسودة رسالة واتساب بواسطة الذكاء الاصطناعي'));
+}
+
+function copyWAMessage(id) {
+  const m = (STATE.procMessages || []).find(x => x.id === id);
+  if (m) {
+    navigator.clipboard.writeText(m.msg).then(() => toast(L('Message copied to clipboard','تم نسخ الرسالة'))).catch(() => toast(L('Copy failed','فشل النسخ'), 'bad'));
+  }
+}
+
+function markWASent(id) {
+  const m = (STATE.procMessages || []).find(x => x.id === id);
+  if (m && m.status === 'drafted') {
+    m.status = 'sent';
+    render();
+  }
+}
+

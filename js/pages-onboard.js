@@ -9,16 +9,22 @@ const OB_STEPS_AR = ['معلومات المطعم','النوع','مصدر الق
 function obShell() {
   const st = STATE.ob.step;
   const steps = isAr() ? OB_STEPS_AR : OB_STEPS;
-  return `<div style="max-width:880px;margin:0 auto;padding:28px 18px 70px">
-   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-    <button class="brand" style="color:var(--text)" onclick="go('dash')"><span class="mark">◔</span> MenuPilot AI</button>
-    <button class="btn btn-line btn-sm" onclick="go('dash')">${L('Skip to dashboard →', 'تخطٍّ إلى اللوحة →')}</button></div>
-   <div class="steps">${steps.map((n, i) => `<span class="stepdot ${i + 1 === st ? 'cur' : i + 1 < st ? 'done' : ''}">${i + 1} · ${n}</span>`).join('')}</div>
-   <div class="card">${obBody(st)}
-    <div style="display:flex;justify-content:space-between;margin-top:20px">
-     <button class="btn btn-line" ${st === 1 ? 'disabled' : ''} onclick="STATE.ob.step=Math.max(1,${st}-1);render()">${L('← Back', '→ رجوع')}</button>
-     ${st < 10 ? `<button class="btn btn-navy" onclick="obNext()">${L('Continue →', 'متابعة ←')}</button>` : ''}
-    </div></div></div>`;
+  return `<div class="ed-land ed-ob">
+   <nav class="ed-nav">
+    <button class="ed-brand" onclick="go('dash')"><span class="ed-mark">◔</span> MenuPilot <span class="ed-brand-sub">/ AI</span></button>
+    <button class="ed-ghost" onclick="go('dash')">${L('Skip to dashboard →', 'تخطٍّ إلى اللوحة →')}</button>
+   </nav>
+   <div class="ed-ob-wrap">
+    <div class="ed-eyebrow"><i></i>${L('GUIDED SETUP · STEP', 'إعداد موجّه · خطوة')} ${st} / 10</div>
+    <h1 class="ed-ob-h1">${steps[st - 1]}</h1>
+    <div class="ed-ob-steps">${steps.map((n, i) => `<span class="ed-ob-dot ${i + 1 === st ? 'cur' : i + 1 < st ? 'done' : ''}" title="${n}">${i + 1 < st ? '✓' : i + 1}</span>`).join('')}</div>
+    <div class="ed-ob-card">${obBody(st)}
+     <div class="ed-ob-nav">
+      <button class="ed-pill-ghost" ${st === 1 ? 'disabled' : ''} onclick="STATE.ob.step=Math.max(1,${st}-1);render()">${L('← Back', '→ رجوع')}</button>
+      ${st < 10 ? `<button class="ed-pill-dark" onclick="obNext()">${L('Continue', 'متابعة')} <span>→</span></button>` : `<button class="ed-pill-dark" onclick="go('dash')">${L('Finish · go to dashboard', 'إنهاء · إلى اللوحة')} <span>→</span></button>`}
+     </div>
+    </div>
+   </div></div>`;
 }
 
 function obNext() {

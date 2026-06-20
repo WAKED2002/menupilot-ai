@@ -27,7 +27,13 @@ function blankState() {
     wastePct: 4,
     budget: { food: 32, labor: 20, mkt: 5 },
     lastInv: null,
+    receipts: [],
     notifications: [],
+    procOrders: [],
+    procQuotes: [],
+    procForecasts: [],
+    supScores: [],
+    procMessages: [],
     invoices: [],
     market: null,
     ob: { step: 1, src: 'paste', extracted: false },
@@ -44,6 +50,7 @@ function migrate(s) {
   if (!s.xfees) s.xfees = [];
   if (!s.evalMonth) s.evalMonth = curMonth();
   if (!('market' in s)) s.market = null;
+  if (!s.receipts) s.receipts = [];
   // Absorb any legacy Electricity/Water lines from Hidden Costs into the
   // dedicated utilities model (so they appear on the Rent & Utilities page and
   // are never counted twice). Only absorb when the field is still untouched.
@@ -61,6 +68,12 @@ function migrate(s) {
   absorb('water', 'water');
   // Every menu item carries a recipe version history (spec §3).
   (s.menu || []).forEach(m => { if (!m.versions) m.versions = []; });
+  if (!s.procOrders) s.procOrders = [];
+  if (!s.procQuotes) s.procQuotes = [];
+  if (!s.procForecasts) s.procForecasts = [];
+  if (!s.supScores) s.supScores = [];
+  if (!s.procMessages) s.procMessages = [];
+  (s.sups || []).forEach(sp => { if (!sp.phone) sp.phone = ''; });
   s._migrated = true;
   return s;
 }
@@ -143,10 +156,10 @@ function seedDemo() {
     M('Saffron Seafood Rice','Seafood Rice',69,[[ing('Rice'),220],[ing('Shrimp (peeled)'),120],[ing('White fish fillet'),90],[ing('Saffron & premium spice'),3],[ing('Olive oil'),20]],7,1.7,480,.34),
   ];
   s.sups = [
-    { n: 'Gulf Fresh Fish Co.', cat: 'Fresh fish & shellfish', terms: 'Net 15', days: 'Sat · Mon · Wed', rating: 4.6 },
-    { n: 'Red Sea Imports', cat: 'Premium & frozen seafood', terms: 'Net 30', days: 'Sun · Tue', rating: 4.2 },
-    { n: 'Riyadh Wholesale Foods', cat: 'Dry goods, produce, dairy', terms: 'Net 7', days: 'Daily', rating: 4.8 },
-    { n: 'In-house prep', cat: 'Stocks & sauces', terms: '—', days: '—', rating: 5.0 },
+    { n: 'Gulf Fresh Fish Co.', phone: '966500000001', cat: 'Fresh fish & shellfish', terms: 'Net 15', days: 'Sat · Mon · Wed', rating: 4.6 },
+    { n: 'Red Sea Imports', phone: '966500000002', cat: 'Premium & frozen seafood', terms: 'Net 30', days: 'Sun · Tue', rating: 4.2 },
+    { n: 'Riyadh Wholesale Foods', phone: '966500000003', cat: 'Dry goods, produce, dairy', terms: 'Net 7', days: 'Daily', rating: 4.8 },
+    { n: 'In-house prep', phone: '', cat: 'Stocks & sauces', terms: '—', days: '—', rating: 5.0 },
   ];
   s.emps = [
     { id: uid(), n: 'Faisal A.', pos: 'Head Chef', basic: 9000, hous: 2250, trans: 500, food: 300, ot: 400, gosi: .1175, visa: 170, iqama: 54, med: 180, recr: 250, saudi: false },
@@ -188,6 +201,21 @@ function seedDemo() {
   s.menu[2].versions = [
     { ts: '2026-03-04T09:00:00Z', by: 'Faisal A.', reason: 'Initial approved recipe', recipe: s.menu[2].recipe.map(r => r.slice()), ingCost: 24.10, cost: 49.20, marginPct: 37.7 },
     { ts: '2026-05-21T14:30:00Z', by: 'Bandar W.', reason: 'Reduced shrimp 200g → 180g after yield review', recipe: s.menu[2].recipe.map(r => r.slice()), ingCost: 21.40, cost: 46.10, marginPct: 41.6 },
+  ];
+  // ── Procurement AI demo data ──────────────────
+  s.supScores = [
+    { sup: 'Gulf Fresh Fish Co.', overall: 88, price: 82, quality: 93, delivery: 90, spend: 47200 },
+    { sup: 'Red Sea Imports', overall: 79, price: 75, quality: 85, delivery: 78, spend: 28600 },
+    { sup: 'Riyadh Wholesale Foods', overall: 92, price: 90, quality: 91, delivery: 95, spend: 18900 },
+  ];
+  s.procOrders = [
+    { id: uid(), sup: 'Gulf Fresh Fish Co.', items: [{ n: 'Hamour fish', qty: 50, unit: 'kg', price: 62 }, { n: 'Shrimp (peeled)', qty: 30, unit: 'kg', price: 58 }], total: 4840, status: 'draft', date: '2026-06-19' },
+    { id: uid(), sup: 'Riyadh Wholesale Foods', items: [{ n: 'Rice', qty: 100, unit: 'kg', price: 7.5 }, { n: 'Olive oil', qty: 20, unit: 'L', price: 24 }], total: 1230, status: 'sent', date: '2026-06-18' },
+    { id: uid(), sup: 'Red Sea Imports', items: [{ n: 'Lobster', qty: 10, unit: 'kg', price: 95 }], total: 950, status: 'confirmed', date: '2026-06-17' },
+  ];
+  s.procMessages = [
+    { id: uid(), sup: 'Gulf Fresh Fish Co.', msg: '\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u064a\u0643\u0645 \u064a\u0627 \u0623\u0628\u0648 \u062e\u0627\u0644\u062f\u060c\n\n\u0623\u0631\u062c\u0648 \u062a\u0623\u0643\u064a\u062f \u0637\u0644\u0628\u064a\u0629 \u064a\u0648\u0645 \u0627\u0644\u0633\u0628\u062a:\n- \u0647\u0627\u0645\u0648\u0631 \u0665\u0660 \u0643\u062c\u0645\n- \u0631\u0628\u064a\u0627\u0646 \u0645\u0642\u0634\u0631 \u0663\u0660 \u0643\u062c\u0645\n\n\u0627\u0644\u0645\u062c\u0645\u0648\u0639: \u0664,\u0668\u0664\u0660 \u0631.\u0633\n\u0627\u0644\u062a\u0648\u0635\u064a\u0644: \u0635\u0628\u0627\u062d \u0627\u0644\u0633\u0628\u062a\n\n\u062c\u0632\u0627\u0643 \u0627\u0644\u0644\u0647 \u062e\u064a\u0631\u0627\u064b', date: '2026-06-19', status: 'drafted' },
+    { id: uid(), sup: 'Riyadh Wholesale Foods', msg: '\u0627\u0644\u0633\u0644\u0627\u0645 \u0639\u0644\u064a\u0643\u0645\u060c\n\n\u0646\u062d\u062a\u0627\u062c \u062a\u0648\u0631\u064a\u062f \u0639\u0627\u062c\u0644:\n- \u0623\u0631\u0632 \u0628\u0633\u0645\u062a\u064a \u0661\u0660\u0660 \u0643\u062c\u0645\n- \u0632\u064a\u062a \u0632\u064a\u062a\u0648\u0646 \u0662\u0660 \u0644\u062a\u0631\n\n\u0627\u0644\u0645\u062c\u0645\u0648\u0639: \u0661,\u0662\u0663\u0660 \u0631.\u0633\n\u0646\u0631\u062c\u0648 \u0627\u0644\u062a\u0648\u0635\u064a\u0644 \u063a\u062f\u0627\u064b \u0635\u0628\u0627\u062d\u0627\u064b\n\n\u0634\u0643\u0631\u0627\u064b', date: '2026-06-18', status: 'sent' },
   ];
   return s;
 }

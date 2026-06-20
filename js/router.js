@@ -43,21 +43,31 @@ function render() {
   else html = appShell(r);
   $('root').innerHTML = html;
   if (AFTER[r]) AFTER[r]();
+  if (window.lucide) lucide.createIcons();
 }
 const AFTER = {};
+AFTER.landing = () => { try { landingFX(); } catch (e) { /* effects are non-critical */ } };
+// Same count-up + scroll-reveal effects on the other editorial public pages.
+AFTER.features = AFTER.landing;
+AFTER.pricingPub = AFTER.landing;
+AFTER.login = AFTER.landing;
+AFTER.signup = AFTER.landing;
 
 /* ── Auth: Supabase-backed signup / login ──────────────────── */
 
 PUB.login = () => authShell(`
-  <h3>${L('Welcome back', 'مرحباً بعودتك')}</h3><div class="sub">${L('Log in to your restaurant workspace.', 'سجّل الدخول إلى مساحة عمل مطعمك.')}</div>
-  <button class="gbtn" onclick="loginWithGoogle()"><span style="font-weight:800;color:#4285F4">G</span> ${L('Continue with Google', 'المتابعة عبر Google')}</button>
-  <button class="gbtn" onclick="enterDemo()"><span style="font-weight:800;color:var(--gold)">D</span> ${L('Open seeded demo workspace', 'افتح مساحة العرض التجريبي')}</button>
-  <div class="or">${L('or with your account', 'أو بحسابك')}</div>
+  <h2 class="ed-auth2-h">${L('Welcome back', 'مرحباً بعودتك')}</h2>
+  <p class="ed-auth2-sub">${L('Need an account?', 'تحتاج حساباً؟')} <a href="#" onclick="go('signup');return false">${L('Sign up', 'أنشئ حساباً')}</a></p>
   <div class="field" id="f-lemail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="lemail" type="email" placeholder="owner@restaurant.sa"><div class="err">${L('Enter a valid email.', 'أدخل بريداً صحيحاً.')}</div></div>
   <div class="field" id="f-lpass"><label>${L('Password', 'كلمة المرور')}</label><input id="lpass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"><div class="err">${L('Password required.', 'كلمة المرور مطلوبة.')}</div></div>
-  <button class="btn btn-navy" id="btnLogin" style="width:100%" onclick="doLogin()">${L('Log in', 'تسجيل الدخول')}</button>
-  <div class="or">${L('new here?', 'جديد هنا؟')}</div>
-  <button class="btn btn-line" style="width:100%" onclick="go('signup')">${L('Create an account', 'إنشاء حساب')}</button>`);
+  <div class="ed-auth2-row"><a href="#" class="ed-auth2-link" onclick="go('forgot');return false">${L('Forgot password?', 'نسيت كلمة المرور؟')}</a></div>
+  <button class="ed-auth2-btn" id="btnLogin" onclick="doLogin()">${L('Log in', 'تسجيل الدخول')}</button>
+  <div class="ed-auth2-or">${L('OR', 'أو')}</div>
+  <div class="ed-auth2-social">
+   <button class="ed-soc" onclick="toast(L('Facebook sign-in is coming soon','تسجيل الدخول عبر فيسبوك قريباً'))"><span class="ed-soc-ic fb">f</span> ${L('Continue with Facebook', 'المتابعة عبر فيسبوك')}</button>
+   <button class="ed-soc" onclick="loginWithGoogle()"><span class="ed-soc-ic gg">G</span> ${L('Continue with Google', 'المتابعة عبر Google')}</button>
+  </div>
+  <button class="ed-auth2-demo" onclick="enterDemo()">${L('Or open the seeded demo workspace →', 'أو افتح مساحة العرض التجريبي ←')}</button>`);
 
 async function doLogin() {
   const email = $('lemail').value.trim().toLowerCase();
@@ -120,54 +130,79 @@ async function provisionOrgForUser(user) {
   return await DB.loadOrgState(org.id);
 }
 
-PUB.signup = () => authShell(`
-  <h3>${L('Create your workspace', 'أنشئ مساحة عملك')}</h3><div class="sub">${L('Tell us about you and your restaurant.', 'أخبرنا عنك وعن مطعمك.')}</div>
-  <button class="gbtn" onclick="loginWithGoogle()"><span style="font-weight:800;color:#4285F4">G</span> ${L('Sign up with Google', 'إنشاء حساب عبر Google')}</button>
-  <div class="or">${L('or with your email', 'أو ببريدك الإلكتروني')}</div>
-  <div class="grid g2">
-   <div class="field" id="f-sname"><label>${L('Owner name', 'اسم المالك')}</label><input id="sname" placeholder="${L('Bandar Waked', 'بندر واكد')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
-   <div class="field" id="f-semail"><label>${L('Email', 'البريد الإلكتروني')}</label><input id="semail" type="email" placeholder="you@restaurant.sa"><div class="err">${L('Valid email required.', 'بريد صحيح مطلوب.')}</div></div>
-   <div class="field" id="f-srest"><label>${L('Restaurant name', 'اسم المطعم')}</label><input id="srest" placeholder="${L('Kabaila Seafood', 'كبايلا للمأكولات البحرية')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
-   <div class="field"><label>${L('City', 'المدينة')}</label><input id="scity" placeholder="${L('Riyadh', 'الرياض')}"></div>
-   <div class="field"><label>${L('Country', 'الدولة')}</label><select id="scountry"><option>${L('Saudi Arabia', 'السعودية')}</option><option>${L('UAE', 'الإمارات')}</option><option>${L('Kuwait', 'الكويت')}</option><option>${L('Qatar', 'قطر')}</option><option>${L('Bahrain', 'البحرين')}</option><option>${L('Oman', 'عُمان')}</option></select></div>
-   <div class="field"><label>${L('Number of branches', 'عدد الفروع')}</label><input id="sbr" type="number" value="1" min="1"></div>
-  </div>
-  <div class="field"><label>${L('Restaurant type', 'نوع المطعم')}</label><select id="stype">${TYPES.map(t => `<option>${t[1]}</option>`).join('')}</select></div>
-  <div class="field" id="f-spass"><label>${L('Password', 'كلمة المرور')}</label><input id="spass" type="password" placeholder="${L('8+ characters', '8 أحرف أو أكثر')}"><div class="err">${L('At least 8 characters.', '8 أحرف على الأقل.')}</div></div>
-  <button class="btn btn-gold" style="width:100%" onclick="doSignup()">${L('Create account →', 'إنشاء حساب ←')}</button>
-  <p class="note" style="margin-top:12px;text-align:center">${L('Already have an account?', 'لديك حساب بالفعل؟')} <a href="#" onclick="go('login');return false" style="color:var(--gold);font-weight:600">${L('Log in', 'تسجيل الدخول')}</a></p>`);
+// Multi-step "Create an account" — 3 steps: email → basic info → password.
+// Values persist in STATE.su across re-renders so steps can be navigated freely.
+PUB.signup = () => {
+  const su = STATE.su || (STATE.su = { step: 1, country: 'Saudi Arabia', branches: 1, type: TYPES[0][1] });
+  const st = su.step;
+  let body = '';
+  if (st === 1) {
+    body = `
+   <div class="field" id="f-su-email"><label>${L("What's your email?", 'ما هو بريدك؟')}</label><input id="su-email" type="email" value="${esc(su.email || '')}" placeholder="${L('Enter your email address', 'أدخل بريدك الإلكتروني')}" oninput="STATE.su.email=this.value" onkeydown="if(event.key==='Enter')suNext()"><div class="err">${L('Enter a valid email.', 'أدخل بريداً صحيحاً.')}</div></div>
+   <button class="ed-auth2-btn" onclick="suNext()">${L('Next', 'التالي')}</button>
+   <div class="ed-auth2-or">${L('OR', 'أو')}</div>
+   <div class="ed-auth2-social">
+    <button class="ed-soc" onclick="toast(L('Facebook sign-up is coming soon','التسجيل عبر فيسبوك قريباً'))"><span class="ed-soc-ic fb">f</span> ${L('Sign up with Facebook', 'التسجيل عبر فيسبوك')}</button>
+    <button class="ed-soc" onclick="loginWithGoogle()"><span class="ed-soc-ic gg">G</span> ${L('Sign up with Google', 'التسجيل عبر Google')}</button>
+   </div>`;
+  } else if (st === 2) {
+    body = `
+   <div class="grid g2">
+    <div class="field" id="f-su-name"><label>${L('Owner name', 'اسم المالك')}</label><input id="su-name" value="${esc(su.name || '')}" oninput="STATE.su.name=this.value" placeholder="${L('Bandar Waked', 'بندر واكد')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
+    <div class="field" id="f-su-rest"><label>${L('Restaurant name', 'اسم المطعم')}</label><input id="su-rest" value="${esc(su.rest || '')}" oninput="STATE.su.rest=this.value" placeholder="${L('Kabaila Seafood', 'كبايلا')}"><div class="err">${L('Required.', 'مطلوب.')}</div></div>
+    <div class="field"><label>${L('City', 'المدينة')}</label><input value="${esc(su.city || '')}" oninput="STATE.su.city=this.value" placeholder="${L('Riyadh', 'الرياض')}"></div>
+    <div class="field"><label>${L('Branches', 'الفروع')}</label><input type="number" min="1" value="${esc(su.branches || 1)}" oninput="STATE.su.branches=this.value"></div>
+    <div class="field"><label>${L('Country', 'الدولة')}</label><select onchange="STATE.su.country=this.value">${['Saudi Arabia', 'UAE', 'Kuwait', 'Qatar', 'Bahrain', 'Oman'].map(c => `<option ${su.country === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>${L('Restaurant type', 'نوع المطعم')}</label><select onchange="STATE.su.type=this.value">${TYPES.map(t => `<option ${su.type === t[1] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></div>
+   </div>
+   <button class="ed-auth2-btn" onclick="suNext()">${L('Next', 'التالي')}</button>`;
+  } else {
+    body = `
+   <div class="field" id="f-su-pass"><label>${L('Create your password', 'أنشئ كلمة المرور')}</label><input id="su-pass" type="password" value="${esc(su.pass || '')}" oninput="STATE.su.pass=this.value" placeholder="${L('8+ characters', '8 أحرف أو أكثر')}" onkeydown="if(event.key==='Enter')suCreate()"><div class="err">${L('At least 8 characters.', '8 أحرف على الأقل.')}</div></div>
+   <button class="ed-auth2-btn" id="suCreateBtn" onclick="suCreate()">${L('Create account', 'إنشاء حساب')}</button>`;
+  }
+  return authShell(`
+   <h2 class="ed-auth2-h">${L('Create an account', 'أنشئ حساباً')}</h2>
+   <p class="ed-auth2-sub">${L('Already have an account?', 'لديك حساب بالفعل؟')} <a href="#" onclick="go('login');return false">${L('Log in', 'تسجيل الدخول')}</a></p>
+   ${authStepper(st)}
+   ${body}
+   ${st > 1 ? `<button class="ed-auth2-back" onclick="suBack()">← ${L('Back', 'رجوع')}</button>` : ''}`);
+};
 
-async function doSignup() {
-  const v = id => $(id).value.trim();
-  const bad = (f, c) => { $(f).classList.toggle('bad', c); return c; };
-  let e = false;
-  e |= bad('f-sname', !v('sname'));
-  e |= bad('f-semail', !v('semail').includes('@'));
-  e |= bad('f-srest', !v('srest'));
-  e |= bad('f-spass', v('spass').length < 8);
-  if (e) { toast(L('Please fix the highlighted fields', 'يرجى تصحيح الحقول المُظللة'), 'bad'); return; }
+function suNext() {
+  const su = STATE.su;
+  if (su.step === 1) {
+    if (!(su.email || '').includes('@')) { $('f-su-email').classList.add('bad'); return; }
+    su.step = 2; render(); return;
+  }
+  if (su.step === 2) {
+    let bad = false;
+    if (!(su.name || '').trim()) { $('f-su-name').classList.add('bad'); bad = true; }
+    if (!(su.rest || '').trim()) { $('f-su-rest').classList.add('bad'); bad = true; }
+    if (bad) return;
+    su.step = 3; render();
+  }
+}
+function suBack() { STATE.su.step = Math.max(1, STATE.su.step - 1); render(); }
 
-  const email = v('semail').toLowerCase();
-  const { data, error } = await DB.signUp(email, v('spass'), { name: v('sname') });
+async function suCreate() {
+  const su = STATE.su;
+  if ((su.pass || '').length < 8) { $('f-su-pass').classList.add('bad'); return; }
+  const email = (su.email || '').toLowerCase();
+  const btn = $('suCreateBtn');
+  if (btn) { btn.disabled = true; btn.textContent = L('Creating…', 'جارٍ الإنشاء…'); }
 
-  if (error) { toast(error.message, 'bad'); return; }
+  const { data, error } = await DB.signUp(email, su.pass, { name: su.name });
+  if (error) { toast(error.message, 'bad'); if (btn) { btn.disabled = false; btn.textContent = L('Create account', 'إنشاء حساب'); } return; }
 
-  // Create org immediately (email confirmation disabled in Supabase for this flow)
   const { data: org, error: orgErr } = await DB.createOrg({
-    name: v('srest'),
-    city: v('scity') || 'Riyadh',
-    country: v('scountry'),
-    type: v('stype'),
-    plan: 'Growth',
+    name: su.rest, city: su.city || 'Riyadh', country: su.country || 'Saudi Arabia',
+    type: su.type || TYPES[0][1], plan: STATE.plan || 'Growth',
   });
-
   if (orgErr) { toast(L('Account created but org setup failed: ', 'أُنشئ الحساب لكن فشل إعداد المنشأة: ') + orgErr.message, 'bad'); return; }
 
-  // Set branches
-  const branches = Array.from({ length: +v('sbr') || 1 }, (_, i) => 'Branch ' + (i + 1));
+  const branches = Array.from({ length: +su.branches || 1 }, (_, i) => 'Branch ' + (i + 1));
   await DB.setBranches(org.id, branches);
-
-  // Seed default gov fees + hidden costs + delivery apps
   await DB.bulkInsertGovFees(org.id, defaultGov());
   await DB.bulkInsertHiddenCosts(org.id, defaultHidden());
   await DB.bulkInsertDeliveryApps(org.id, [
@@ -175,56 +210,60 @@ async function doSignup() {
     { n: 'Jahez', comm: 22, mkt: 3, share: 35 },
     { n: 'ToYou', comm: 20, mkt: 2, share: 25 },
   ]);
-  await DB.setCategories(org.id, (TYPES.find(t => t[1] === v('stype')) || TYPES[0])[2]);
+  await DB.setCategories(org.id, (TYPES.find(t => t[1] === su.type) || TYPES[0])[2]);
 
   const orgState = await DB.loadOrgState(org.id);
   const th = STATE.theme, lg = STATE.lang;
   STATE = { ...blankState(), ...orgState, authed: true, verified: true, theme: th, lang: lg };
-  STATE.user = { n: v('sname'), email, role: 'Owner' };
+  STATE.user = { n: su.name, email, role: 'Owner' };
   STATE.ob = { step: 1, src: 'paste', extracted: false };
+  STATE.su = null;
 
-  toast(L('Account created — welcome, ' + v('sname').split(' ')[0] + '!', 'تم إنشاء الحساب — أهلاً، ' + v('sname').split(' ')[0] + '!'));
+  toast(L('Account created — welcome, ' + (su.name || '').split(' ')[0] + '!', 'تم إنشاء الحساب — أهلاً، ' + (su.name || '').split(' ')[0] + '!'));
   go('onboarding');
 }
 
 /* ── App shell ───────────────────────────────────────────────── */
 const NAV = [
-  ['overview', [['dash', '▦'], ['branch', '◫'], ['copilot', '✧']]],
-  ['menuG', [['menu', '☰'], ['cats', '▤'], ['recipe', '⚗'], ['ing', '⬡'], ['sup', '⛟'], ['proc', '⇄'], ['inv', '▥']]],
-  ['costsG', [['emp', '⬢'], ['gov', '⌂'], ['rentutil', '⌖'], ['hidden', '◌'], ['xfees', '⊘'], ['mktg', '◎'], ['apps', '➤'], ['alloc', '⊞']]],
-  ['intelG', [['costing', '⬡'], ['pricing', '◈'], ['market', '◭'], ['eng', '◧'], ['scen', '∿'], ['profit', '◍'], ['reports', '▣']]],
-  ['adminG', [['settings', '⚙'], ['usersP', '⊟'], ['billing', '▦']]],
+  ['overview', [['dash', 'layout-dashboard'], ['branch', 'git-branch'], ['copilot', 'bot']]],
+  ['menuG', [['menu', 'utensils'], ['cats', 'tags'], ['recipe', 'flask-conical'], ['ing', 'leaf'], ['sup', 'truck'], ['proc', 'receipt'], ['inv', 'package'], ['procDash', 'shopping-cart']]],
+  ['costsG', [['emp', 'users'], ['gov', 'landmark'], ['rentutil', 'building-2'], ['hidden', 'eye-off'], ['xfees', 'alert-circle'], ['mktg', 'megaphone'], ['apps', 'smartphone'], ['alloc', 'pie-chart']]],
+  ['intelG', [['costing', 'calculator'], ['pricing', 'tag'], ['market', 'trending-up'], ['eng', 'bar-chart-2'], ['scen', 'sliders'], ['profit', 'circle-dollar-sign'], ['reports', 'file-bar-chart']]],
+  ['adminG', [['settings', 'settings'], ['usersP', 'user-cog'], ['billing', 'credit-card']]],
 ];
 let pops = { notif: false, user: false };
 
 function appShell(r) {
   const t = totals();
-  return `<div id="app">
-  <aside class="side">
-   <button class="brand" onclick="go('dash')"><span class="mark">◔</span> MenuPilot AI</button>
-   ${NAV.map(([g, items]) => `<div class="navgroup">${T(g)}</div>` + items.map(([k, ic]) => `<button class="nitem ${r === k ? 'act' : ''}" onclick="go('${k}')"><span class="ic">${ic}</span> ${T(k)}</button>`).join('')).join('')}
-  </aside>
-  <div>
-   <div class="topbar">
-    <div class="searchbox"><span class="sic">⌕</span><input id="gsearch" placeholder="${T('search')}" oninput="gSearch(this.value)"><div id="sres"></div></div>
-    <select class="orgsel" onchange="toast(L('Switched view: ','تم تبديل العرض: ')+this.value)"><option>${esc(STATE.org.name)}</option><option>${L('+ Add organization', '+ إضافة منشأة')}</option></select>
+  const curGroup = NAV.find(([g, items]) => items.some(([k]) => k === r)) || NAV[0];
+  return `<div class="appbg"><div class="apppanel">
+   <nav class="topnav">
+    <button class="brand" onclick="go('dash')"><span class="mark">${lc('chef-hat')}</span> MenuPilot AI</button>
+    <div class="navpills">
+     ${NAV.map(([g, items]) => `<button class="navpill ${curGroup[0] === g ? 'act' : ''}" onclick="go('${items[0][0]}')">${T(g)}</button>`).join('')}
+    </div>
     <span style="flex:1"></span>
-    <button class="iconbtn" title="Language" onclick="setLang(STATE.lang==='en'?'ar':'en')">${STATE.lang === 'en' ? 'ع' : 'EN'}</button>
-    <button class="iconbtn" title="Theme" onclick="setTheme(STATE.theme==='light'?'dark':'light')">${STATE.theme === 'light' ? '☾' : '☀'}</button>
-    <button class="iconbtn" onclick="pops.notif=!pops.notif;pops.user=false;render()">⊙${STATE.notifications.length ? '<span class="dot"></span>' : ''}</button>
+    <div class="searchbox sm"><span class="sic">${lc('search')}</span><input id="gsearch" placeholder="${T('search')}" oninput="gSearch(this.value)"><div id="sres"></div></div>
+    <button class="iconbtn lang-btn" title="${STATE.lang === 'en' ? 'Switch to Arabic' : 'التبديل إلى الإنجليزية'}" onclick="setLang(STATE.lang==='en'?'ar':'en')">${lc('globe-2')}<span class="lang-badge">${STATE.lang === 'en' ? 'EN' : 'ع'}</span></button>
+    <button class="iconbtn" title="Theme" onclick="setTheme(STATE.theme==='light'?'dark':'light')">${STATE.theme === 'light' ? lc('moon') : lc('sun')}</button>
+    <button class="iconbtn" title="${T('settings')}" onclick="go('settings')">${lc('settings')}</button>
+    <button class="iconbtn" onclick="pops.notif=!pops.notif;pops.user=false;render()">${lc('bell')}${STATE.notifications.length ? '<span class="dot"></span>' : ''}</button>
     <button class="avatar" onclick="pops.user=!pops.user;pops.notif=false;render()">${esc(STATE.user.n.split(' ').map(x => x[0]).join('').slice(0, 2))}</button>
     ${pops.notif ? `<div class="pop right"><div class="ph"><b>${L('Notifications', 'الإشعارات')}</b> · ${L('agent alerts', 'تنبيهات الوكلاء')}</div>
-      ${STATE.notifications.map(n => `<div class="pi"><span>${n.k === 'bad' ? '▲' : n.k === 'warn' ? '◆' : 'ℹ'}</span><div><b>${esc(n.t)}</b><small>${esc(n.m)}</small><small style="color:var(--gold)">${L(n.time + ' ago', 'منذ ' + n.time)}</small></div></div>`).join('') || `<div class="pi">${L('No notifications.', 'لا توجد إشعارات.')}</div>`}
+      ${STATE.notifications.map(n => `<div class="pi"><span class="pi-ic ${n.k}">${lc(n.k === 'bad' ? 'alert-triangle' : n.k === 'warn' ? 'alert-circle' : 'info')}</span><div><b>${esc(n.t)}</b><small>${esc(n.m)}</small><small style="color:var(--gold)">${L(n.time + ' ago', 'منذ ' + n.time)}</small></div></div>`).join('') || `<div class="pi">${lc('bell-off')} ${L('No notifications.', 'لا توجد إشعارات.')}</div>`}
       <button class="pi" style="color:var(--gold);font-weight:600" onclick="clearNotifs()">${L('Clear all', 'مسح الكل')}</button></div>` : ''}
     ${pops.user ? `<div class="pop right"><div class="ph"><b>${esc(STATE.user.n)}</b><br><span class="note">${esc(STATE.user.email)} · ${STATE.user.role}</span></div>
-      <button class="pi" onclick="pops.user=false;go('settings')">⚙ <div>${T('settings')}</div></button>
-      <button class="pi" onclick="pops.user=false;go('usersP')">⊟ <div>${T('usersP')}</div></button>
-      <button class="pi" onclick="pops.user=false;go('billing')">▦ <div>${T('billing')} <small>${STATE.plan} plan</small></div></button>
-      <button class="pi" style="color:var(--coral)" onclick="logout()">⏻ <div>${T('logout')}</div></button></div>` : ''}
+      <button class="pi" onclick="pops.user=false;go('settings')">${lc('settings')} <div>${T('settings')}</div></button>
+      <button class="pi" onclick="pops.user=false;go('usersP')">${lc('user-cog')} <div>${T('usersP')}</div></button>
+      <button class="pi" onclick="pops.user=false;go('billing')">${lc('credit-card')} <div>${T('billing')} <small>${STATE.plan} plan</small></div></button>
+      <button class="pi" style="color:var(--coral)" onclick="logout()">${lc('log-out')} <div>${T('logout')}</div></button></div>` : ''}
+   </nav>
+   <div class="subnav">
+    ${curGroup[1].map(([k, ic]) => `<button class="subpill ${r === k ? 'act' : ''}" onclick="go('${k}')"><span class="ic">${lc(ic)}</span> ${T(k)}</button>`).join('')}
    </div>
-   <main class="main">
-    <div class="pagehead"><div><h2>${T(r)}</h2><div class="crumb">${esc(STATE.org.name)} · ${esc(STATE.org.city)} · ${STATE.org.branches.length} ${L('branch(es)', 'فرع')} · ${STATE.menu.length ? SAR(t.rev) + L(' /mo', ' / شهر') : L('no sales data yet', 'لا توجد بيانات مبيعات بعد')}</div></div>
-     <div style="display:flex;gap:8px;align-items:center"><span class="pill tag info">${L('SAR', 'ر.س')}</span><span class="tag ${STATE.plan === 'Growth' ? 'gold' : 'info'}">${L(STATE.plan + ' plan', 'باقة ' + STATE.plan)}</span></div></div>
+   <main class="main2">
+    ${r === 'dash' ? '' : `<div class="pagehead"><div><h2>${T(r)}</h2><div class="crumb">${esc(STATE.org.name)} · ${esc(STATE.org.city)} · ${STATE.org.branches.length} ${L('branch(es)', 'فرع')} · ${STATE.menu.length ? SAR(t.rev) + L(' /mo', ' / شهر') : L('no sales data yet', 'لا توجد بيانات مبيعات بعد')}</div></div>
+     <div style="display:flex;gap:8px;align-items:center"><span class="pill tag info">${L('SAR', 'ر.س')}</span><span class="tag ${STATE.plan === 'Growth' ? 'gold' : 'info'}">${L(STATE.plan + ' plan', 'باقة ' + STATE.plan)}</span></div></div>`}
     ${PAGES[r] ? PAGES[r]() : '<div class="empty"><h5>Page not found</h5></div>'}
    </main></div></div>`;
 }
@@ -232,10 +271,11 @@ function appShell(r) {
 function gSearch(v) {
   const box = $('sres'); if (!v || v.length < 2) { box.innerHTML = ''; return; }
   const lo = v.toLowerCase();
-  const hits = [...STATE.menu.filter(m => m.n.toLowerCase().includes(lo)).slice(0, 4).map(m => ['☰ ' + m.n, 'costing']),
-    ...STATE.ings.filter(i => i.n.toLowerCase().includes(lo)).slice(0, 3).map(i => ['⬡ ' + i.n, 'ing']),
-    ...Object.keys(I18N.en).filter(k => I18N.en[k].toLowerCase().includes(lo) && PAGES[k]).slice(0, 3).map(k => ['▦ ' + T(k), k])];
-  box.innerHTML = hits.length ? `<div class="sresults">${hits.map(h => `<button onclick="$('gsearch').value='';$('sres').innerHTML='';go('${h[1]}')"><span>${esc(h[0])}</span><span class="note">${L('open', 'فتح')}</span></button>`).join('')}</div>` : '';
+  const hits = [...STATE.menu.filter(m => m.n.toLowerCase().includes(lo)).slice(0, 4).map(m => [lc('utensils') + ' ' + m.n, 'costing']),
+    ...STATE.ings.filter(i => i.n.toLowerCase().includes(lo)).slice(0, 3).map(i => [lc('leaf') + ' ' + i.n, 'ing']),
+    ...Object.keys(I18N.en).filter(k => I18N.en[k].toLowerCase().includes(lo) && PAGES[k]).slice(0, 3).map(k => [lc('layout-dashboard') + ' ' + T(k), k])];
+  box.innerHTML = hits.length ? `<div class="sresults">${hits.map(h => `<button onclick="$('gsearch').value='';$('sres').innerHTML='';go('${h[1]}')"><span>${h[0]}</span><span class="note">${L('open', 'فتح')}</span></button>`).join('')}</div>` : '';
+  if (window.lucide) lucide.createIcons();
 }
 
 async function clearNotifs() {
@@ -246,16 +286,22 @@ async function clearNotifs() {
 }
 
 function emptyMenuState() {
-  return `<div class="card"><div class="empty"><div class="big">☰</div><h5>${L('No menu yet', 'لا توجد قائمة بعد')}</h5>
+  return `<div class="card"><div class="empty"><div class="big lc-big">${lc('utensils')}</div><h5>${L('No menu yet', 'لا توجد قائمة بعد')}</h5>
  <p style="max-width:44ch;margin:0 auto 14px">${L('Run the Menu Extraction Agent on your website, Instagram, or a PDF menu — it builds your items, then Recipe Intelligence drafts the recipes.', 'شغّل وكيل استخراج القائمة على موقعك أو إنستغرام أو ملف PDF — يبني الأصناف، ثم يقوم وكيل ذكاء الوصفات بإعداد الوصفات.')}</p>
- <button class="btn btn-gold" onclick="STATE.ob.step=3;go('onboarding')">${L('▶ Run AI onboarding', '▶ تشغيل الإعداد الذكي')}</button></div></div>`;
+ <button class="btn btn-gold" onclick="STATE.ob.step=3;go('onboarding')">${lc('play')} ${L('Run AI onboarding', 'تشغيل الإعداد الذكي')}</button></div></div>`;
 }
 
-// Auth helpers (used by pages-public.js)
+// Auth helpers (used by pages-public.js). Centered single-column layout.
 function authShell(inner, head) {
-  return `<div class="auth">
- <div class="auth-side"><button class="brand" onclick="go('landing')"><span class="mark">◔</span> MenuPilot AI</button>
-  <h2>${head || L('Run your menu like a <em>CFO</em>.', 'أدِر قائمتك كأنك <em>مدير مالي</em>.')}</h2>
-  <div class="note" style="color:#5E7682">${L('Saudi-first restaurant financial intelligence · SAR · ZATCA-aware', 'ذكاء مالي للمطاعم سعودي أولاً · ر.س · متوافق مع زاتكا')}</div></div>
- <div class="auth-panel"><div class="auth-card">${inner}</div></div></div>`;
+  return `<div class="ed-auth2">
+ <button class="ed-auth2-mark" onclick="go('landing')" title="MenuPilot AI"><span class="ed-mark">${lc('chef-hat')}</span></button>
+ <button class="ed-auth2-lang" onclick="setLang(STATE.lang==='en'?'ar':'en')">${STATE.lang === 'en' ? 'العربية' : 'English'}</button>
+ <div class="ed-auth2-col">${inner}</div>
+</div>`;
+}
+
+// 3-step stepper used by the signup flow.
+function authStepper(cur) {
+  const steps = [[1, L('Enter your email address', 'أدخل بريدك الإلكتروني')], [2, L('Provide your basic info', 'أدخل معلوماتك الأساسية')], [3, L('Create your password', 'أنشئ كلمة المرور')]];
+  return `<div class="ed-step">${steps.map((s, i) => `${i ? '<span class="ed-step-line"></span>' : ''}<div class="ed-step-i ${cur === s[0] ? 'cur' : cur > s[0] ? 'done' : ''}"><span class="ed-step-n">${cur > s[0] ? lc('check') : s[0]}</span><span class="ed-step-l">${s[1]}</span></div>`).join('')}</div>`;
 }

@@ -25,8 +25,8 @@ function nextMonth(ym) {
 
 /* ── i18n ────────────────────────────────────────────────────── */
 const I18N = {
-  en: { dash:'Dashboard',branch:'Branch Dashboard',menu:'Menu Items',cats:'Menu Categories',recipe:'Recipe Builder',ing:'Ingredient Center',sup:'Supplier Center',proc:'Procurement',inv:'Inventory',emp:'Employee Costs',gov:'Saudi Government Fees',hidden:'Hidden Costs',mktg:'Marketing & Packaging',apps:'Delivery Apps',rentutil:'Rent & Utilities',xfees:'Extra Fees & Fines',alloc:'Cost Allocation',market:'Live Market Rates',costing:'Menu Costing',pricing:'Pricing Center',eng:'Menu Engineering',scen:'Scenario Simulator',profit:'Profitability Center',reports:'Reports Center',copilot:'AI Copilot',settings:'Settings',usersP:'User Management',billing:'Subscription & Billing',overview:'Overview',menuG:'Menu & Recipes',costsG:'Cost Structure',intelG:'Intelligence',adminG:'Administration',search:'Search menu, ingredients, pages…',logout:'Log out' },
-  ar: { dash:'لوحة التحكم',branch:'لوحة الفرع',menu:'أصناف القائمة',cats:'تصنيفات القائمة',recipe:'منشئ الوصفات',ing:'مركز المكونات',sup:'مركز الموردين',proc:'المشتريات',inv:'المخزون',emp:'تكاليف الموظفين',gov:'الرسوم الحكومية السعودية',hidden:'التكاليف الخفية',mktg:'التسويق والتغليف',apps:'تطبيقات التوصيل',rentutil:'الإيجار والمرافق',xfees:'رسوم وغرامات إضافية',alloc:'توزيع التكاليف',market:'أسعار السوق المباشرة',costing:'تكلفة القائمة',pricing:'مركز التسعير',eng:'هندسة القائمة',scen:'محاكي السيناريوهات',profit:'مركز الربحية',reports:'التقارير',copilot:'المساعد الذكي',settings:'الإعدادات',usersP:'إدارة المستخدمين',billing:'الاشتراك والفوترة',overview:'نظرة عامة',menuG:'القائمة والوصفات',costsG:'هيكل التكاليف',intelG:'الذكاء',adminG:'الإدارة',search:'ابحث في القائمة والمكونات…',logout:'تسجيل الخروج' }
+  en: { dash:'Dashboard',branch:'Branch Dashboard',menu:'Menu Items',cats:'Menu Categories',recipe:'Recipe Builder',ing:'Ingredient Center',sup:'Supplier Center',proc:'Procurement',inv:'Inventory',emp:'Employee Costs',gov:'Saudi Government Fees',hidden:'Hidden Costs',mktg:'Marketing & Packaging',apps:'Delivery Apps',rentutil:'Rent & Utilities',xfees:'Extra Fees & Fines',alloc:'Cost Allocation',market:'Live Market Rates',costing:'Menu Costing',pricing:'Pricing Center',eng:'Menu Engineering',scen:'Scenario Simulator',profit:'Profitability Center',reports:'Reports Center',copilot:'AI Copilot',settings:'Settings',usersP:'User Management',billing:'Subscription & Billing',overview:'Overview',menuG:'Menu & Recipes',costsG:'Cost Structure',intelG:'Intelligence',adminG:'Administration',search:'Search menu, ingredients, pages…',procDash:'Procurement AI',logout:'Log out' },
+  ar: { dash:'لوحة التحكم',branch:'لوحة الفرع',menu:'أصناف القائمة',cats:'تصنيفات القائمة',recipe:'منشئ الوصفات',ing:'مركز المكونات',sup:'مركز الموردين',proc:'المشتريات',inv:'المخزون',emp:'تكاليف الموظفين',gov:'الرسوم الحكومية السعودية',hidden:'التكاليف الخفية',mktg:'التسويق والتغليف',apps:'تطبيقات التوصيل',rentutil:'الإيجار والمرافق',xfees:'رسوم وغرامات إضافية',alloc:'توزيع التكاليف',market:'أسعار السوق المباشرة',costing:'تكلفة القائمة',pricing:'مركز التسعير',eng:'هندسة القائمة',scen:'محاكي السيناريوهات',profit:'مركز الربحية',reports:'التقارير',copilot:'المساعد الذكي',settings:'الإعدادات',usersP:'إدارة المستخدمين',billing:'الاشتراك والفوترة',overview:'نظرة عامة',menuG:'القائمة والوصفات',costsG:'هيكل التكاليف',intelG:'الذكاء',adminG:'الإدارة',search:'ابحث في القائمة والمكونات…',procDash:'ذكاء المشتريات',logout:'تسجيل الخروج' }
 };
 const T = k => I18N[STATE.lang][k] || k;
 
@@ -134,12 +134,19 @@ const MARKET_FALLBACK = {
   ],
 };
 
+/* ── Lucide icon helper — renders an inline SVG icon ─────────── */
+// Usage: lc('icon-name') → '<i data-lucide="icon-name" class="lc"></i>'
+// After DOM insertion always call lucide.createIcons() (done in render()).
+const lc = (name, cls = '') => `<i data-lucide="${name}" class="lc${cls ? ' ' + cls : ''}"></i>`;
+
 /* ── UI helpers ─────────────────────────────────────────────── */
 function toast(m, k) {
   const t = document.createElement('div');
   t.className = 'toast ' + (k || 'good');
-  t.innerHTML = (k === 'bad' ? '▲ ' : '✓ ') + m;
+  const icon = k === 'bad' ? 'alert-triangle' : k === 'warn' ? 'alert-circle' : 'check-circle';
+  t.innerHTML = lc(icon, 'toast-ic') + ' ' + m;
   $('toasts').appendChild(t);
+  if (window.lucide) lucide.createIcons({ nodes: [t] });
   setTimeout(() => t.remove(), 3800);
 }
 function modal(html) { $('modalhost').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
