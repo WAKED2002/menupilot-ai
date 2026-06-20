@@ -7,21 +7,36 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// Decode HTML entities — including numeric character references (&#xNNN; / &#NNN;),
+// which many Arabic sites use to encode all of their text and prices.
+function decodeEntities(str) {
+  return str
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => {
+      try { return String.fromCodePoint(parseInt(hex, 16)); } catch { return ' '; }
+    })
+    .replace(/&#(\d+);/g, (_, dec) => {
+      try { return String.fromCodePoint(parseInt(dec, 10)); } catch { return ' '; }
+    })
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'");
+}
+
 function stripHtml(html) {
-  return html
+  // Strip real tags first (entities are still encoded here, so a numeric entity
+  // that decodes to '<' can't masquerade as a tag), THEN decode entities.
+  const stripped = html
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
     .replace(/<!--[\s\S]*?-->/g, ' ')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(?:p|div|li|tr|th|td|h[1-6]|section|article)[^>]*>/gi, '\n')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/<[^>]+>/g, ' ');
+  return decodeEntities(stripped)
     .replace(/\s{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -90,7 +105,7 @@ export default async function handler(req, res) {
   try {
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      max_tokens: 8192,
       system: `You are a menu extraction agent for a Saudi restaurant cost system.
 Extract every food and drink item from the page text below.
 Return ONLY a valid JSON array — no markdown, no explanation.
@@ -106,11 +121,19 @@ Output format: [{"name":"...","price":0,"category":"...","description":"..."}]`,
     });
 
     const reply = message.content[0]?.text?.trim() || '[]';
-    const jsonMatch = reply.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return res.status(200).json({ items: [], rawText });
-
     let items = [];
-    try { items = JSON.parse(jsonMatch[0]); } catch { items = []; }
+    const jsonMatch = reply.match(/\[[\s\S]*\]/);
+    if (jsonMatch) {
+      try { items = JSON.parse(jsonMatch[0]); } catch { items = []; }
+    }
+    // Recover a truncated array (response hit max_tokens before the closing ]):
+    // keep every complete {...} object up to the last one that parses.
+    if (items.length === 0) {
+      const objs = reply.match(/\{[^{}]*\}/g) || [];
+      for (const o of objs) {
+        try { items.push(JSON.parse(o)); } catch { /* skip partial object */ }
+      }
+    }
 
     // Filter out zero-price items
     items = items.filter(it => it.name && it.price > 0);
